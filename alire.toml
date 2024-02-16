@@ -1,0 +1,9 @@
+name = "puff"
+description = "Shiny new project"
+version = "0.1.0-dev"
+
+authors = ["tania hagn"]
+maintainers = ["tania hagn <info@taniahagn.de>"]
+maintainers-logins = ["df9ry"]
+
+executables = ["puff"]
