@@ -1,14 +1,19 @@
-with Interfaces; use Interfaces;
+with Interfaces;   use Interfaces;
+with Interfaces.C; use Interfaces.C;
 
 package xgraph is
 
    type ViewPortType is record
-      X1, Y1, X2, Y2 : Integer;
+      X1, Y1, X2, Y2 : Integer_32;
       Clip : Boolean;
-   end record;
+   end record with Convention => C;
 
-   ScreenHeight : Integer;
-   ScreenWidth  : Integer;
+   ScreenHeight : Integer_32;
+   pragma Import (C, ScreenHeight, "ScreenHeight");
+
+   ScreenWidth  : Integer_32;
+   pragma Import (C, ScreenWidth, "ScreenWidth");
+
    SOLIDFILL    : constant := 0;
    lefttext     : constant := 0;
    centertext   : constant := 1;
@@ -84,20 +89,17 @@ package xgraph is
    procedure SetTextJustify (Horizontal, Vertical : Integer_32);
    pragma Import (C, SetTextJustify, "SetTextJustify");
 
-   procedure OutTextXY (X, Y : Integer; TextString : String);
+   procedure OutTextXY (X, Y : Integer; TextString : char_array);
    pragma Import (C, OutTextXY, "OutTextXY");
 
    procedure SetViewPort (X1, Y1, X2, Y2 : Integer_32; Clip : Integer_8);
    pragma Import (C, SetViewPort, "SetViewPort");
 
-   function GetBkColor return Integer_32;
+   function GetBkColor return Unsigned_16;
    pragma Import (C, GetBkColor, "GetBkColor");
 
-   procedure SetBkColor (Color : Integer_32);
+   procedure SetBkColor (Color : Unsigned_16);
    pragma Import (C, SetBkColor, "SetBkColor");
-
-   function GraphErrorMsg (ErrorCode : Integer_32) return String;
-   pragma Import (C, GraphErrorMsg, "GraphErrorMsg");
 
    function GraphResult return Integer_32;
    pragma Import (C, GraphResult, "GraphResult");
@@ -108,46 +110,49 @@ package xgraph is
    procedure PutBox (bn, x, y, width, height : Integer_32);
    pragma Import (C, PutBox, "PutBox");
 
-   --  external name 'ScreenHeight';
-   --  external name 'ScreenWidth';
-
    procedure Init_X;
    pragma Import (C, Init_X, "init_x");
 
    procedure Window (X1, Y1, X2, Y2 : Integer_32);
-   pragma Import (C, Window, "Window");
+   pragma Import (C, Window, "crtWindow");
 
    procedure GotoXY (X : Integer_32; Y : Integer_32);
    pragma Import (C, GotoXY, "GotoXY");
 
+   procedure PutStr (Text : char_array);
+   pragma Import (C, PutStr, "PutStr");
+
+   procedure PutCh (Ch : char);
+   pragma Import (C, PutCh, "PutCh");
+
    procedure Sound (hz : Integer_32);
    pragma Import (C, Sound, "Sound");
 
-   procedure P2Ada_no_keyword_Delay (DTime : Integer_32);
-   pragma Import (C, P2Ada_no_keyword_Delay, "P2Ada_no_keyword_Delay");
+   procedure C_Delay (DTime : Integer_32);
+   pragma Import (C, C_Delay, "Delay");
 
    procedure NoSound;
    pragma Import (C, NoSound, "NoSound");
 
-   function KeyPressed return Integer;
+   function KeyPressed return Integer_8;
    pragma Import (C, KeyPressed, "KeyPressed");
 
-   function ReadKey return Character;
+   function ReadKey return Integer_32;
    pragma Import (C, ReadKey, "ReadKey");
 
    procedure TextMode (Mode : Integer_32);
    pragma Import (C, TextMode, "TextMode");
 
-   procedure TextColor (CL : Integer_32);
+   procedure TextColor (CL : Unsigned_16);
    pragma Import (C, TextColor, "TextColor");
 
-   procedure TextBackground (CL : Integer_32);
+   procedure TextBackground (CL : Unsigned_16);
    pragma Import (C, TextBackground, "TextBackground");
 
    procedure ClrScr;
    pragma Import (C, ClrScr, "ClrScr");
 
-   function GetTimerTicks return Integer;
+   function GetTimerTicks return Integer_64;
    pragma Import (C, GetTimerTicks, "GetTimerTicks");
 
 end xgraph;

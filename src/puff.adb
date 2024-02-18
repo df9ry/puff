@@ -1,17 +1,16 @@
-with xgraph; use xgraph;
+with Ada.Text_IO;             use Ada.Text_IO;
 
-with pfst;   use pfst;
+with xgraph;                  use xgraph;
+with pfst;                    use pfst;
+with utils;                   use utils;
 
 procedure puff is
-
-   ch : Character;
 
 begin
    Init_X;
    Puff_Start;
 
-   loop
-      ch := ReadKey;
-      exit when ch = ASCII.ESC;
-   end loop;
+exception
+   when Program_halted =>
+      Put_Line ("Regular program halt.");
 end puff;

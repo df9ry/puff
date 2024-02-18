@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdint.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/Xutil.h>
@@ -27,6 +28,9 @@ struct ViewPortType {
   char clip;
 };
 
+int32_t ScreenHeight;
+int32_t ScreenWidth;
+
 Display *dpy = NULL;
 XWindowAttributes wa;
 int scr;
@@ -38,9 +42,6 @@ int fontyoffs = 0;
 int Ox = 0, Oy = 0;
 int textjustX = RightText;
 int textjustY = CenterText;
-
-int ScreenHeight;
-int ScreenWidth;
 
 int drawcounter = 0;
 int bkcolor = 0;
@@ -59,14 +60,14 @@ void CloseGraph(void)
 {
 }
 
-void SetColor (int32_t Color) 
+void SetColor (uint16_t Color) 
 {
-   XSetForeground(dpy,gc,pascalcolours[Color]);
+   XSetForeground(dpy, gc, pascalcolours[Color]);
 }
 
-void SetBkColor (int32_t Color) 
+void SetBkColor (uint16_t Color) 
 {
-   bkcolor=Color;
+   bkcolor = Color;
    XSetForeground(dpy, gcclear, pascalcolours[Color]);
 }
 
@@ -168,26 +169,22 @@ void SetTextJustify (int32_t Horizontal, int32_t Vertical)
    textjustY=Vertical;
 }
 
-void C_OutTextXY (int32_t X, int32_t Y, unsigned char *TextString)
+void OutTextXY (int32_t X, int32_t Y, char *TextString)
 {
-   int x,y;
-   char s[40];
+   int x, y;
    int l;
 
-   l=TextString[0];
-   if (l>32) l=32;
-   memcpy(s,TextString+1,l);
-   s[l]=0;
+   l = strlen(TextString);
 
-   x=Ox+X;
-   y=Oy+Y;
-   if (textjustX==CenterText) x-=4*TextString[0];
-   if (textjustX==RightText) x-=8*TextString[0];
-   if (textjustY==CenterText) y-=7;
-   if (textjustY==TopText) y-=14;
+   x = Ox + X;
+   y = Oy + Y;
+   if (textjustX == CenterText) x -= 4 * l;
+   if (textjustX == RightText)  x -= 8 * l;
+   if (textjustY == CenterText) y -= 7;
+   if (textjustY == TopText)    y -= 14;
 
    XDrawString (dpy, pm, gc, x, y + fontyoffs,
-                (const char *)TextString+1, TextString[0]);
+                (const char *)TextString, l);
    drawcounter++;
 }
 
@@ -218,16 +215,11 @@ void SetViewPort (int32_t X1, int32_t Y1, int32_t X2, int32_t Y2, int8_t Clip)
 }
 
 
-int GetBkColor(void) 
+uint16_t GetBkColor(void) 
 {
    return bkcolor;
 }
 
-
-char *GraphErrorMsg (int32_t ErrorCode)
-{
-   return "Test!";
-}
 
 int GraphResult()
 {
@@ -248,16 +240,16 @@ void crtWindow (int32_t X1, int32_t Y1, int32_t X2, int32_t Y2)
 
 void GotoXY (int32_t X, int32_t Y)
 {
-   crtX=X+crtXmin-1; crtY=Y+crtYmin-1;
+  crtX = X + crtXmin - 1;
+  crtY = Y + crtYmin - 1;
 }
 
 void Sound (int32_t hz)
 {
 }
 
-int key=-1;
-int prevdrawcounter=0;
-
+int key = -1;
+int prevdrawcounter = 0;
 
 void process_event(XEvent *xe)
 {
@@ -432,7 +424,7 @@ void NoSound(void)
 {
 }
 
-int32_t KeyPressed(void)
+char KeyPressed(void)
 {
    XEvent xe;
    if (drawcounter>0 && drawcounter==prevdrawcounter) {
@@ -456,14 +448,14 @@ int32_t ReadKey(void)
    XEvent xe;
    int i;
 
-   XClearWindow(dpy,w);
+   XClearWindow(dpy, w);
    XFlush(dpy);
-   while (key<0) {
+   while (key < 0) {
       XNextEvent(dpy, &xe);
       process_event(&xe);
    }
-   i=key;
-   key=-1;
+   i = key;
+   key = -1;
    return i;
 }
 
@@ -471,13 +463,13 @@ void TextMode(int32_t Mode)
 {
 }
 
-void TextColor (int32_t CL)
+void TextColor (uint16_t CL)
 {
    if (!dpy) return;
    XSetForeground(dpy,gctext,pascalcolours[CL]);
 }
 
-void TextBackground (int CL)
+void TextBackground (uint16_t CL)
 {
    if (!dpy) return;
    XSetForeground(dpy,gcclear,pascalcolours[CL]);
@@ -643,39 +635,40 @@ void write_other(int x, int y, int c)
          x--; y++; XDrawPoint(dpy, pm, gctext, x,y);
          break;
       default:
-         fprintf(stderr,"NOT IMPLEMENTED: write_other(%i,%i,%i)\n",c,x,y);
+         fprintf(stderr,"NOT IMPLEMENTED: write_other(%i, %i, %i)\n", c, x, y);
    }
 }
 
-void DoWrite(unsigned char *s)
+void PutStr(unsigned char *s)
 {
-   int x,y;
+   int l, x, y;
    unsigned char *p;
-   int newline=0;
+   int newline = 0;
 
-   x=(crtX-1)*8;
-   y=(crtY-1)*14;
+   l = strlen((const char*)s);
+   x = (crtX - 1) * 8;
+   y = (crtY - 1) * 14;
 
-   if (memcmp(s,"\x03\x08 \x08",4)==0) {
-      XFillRectangle(dpy, pm, gcclear, x-8,y,8,14);
+   if (memcmp(s, "\x08\x08\x00" , 3) == 0) { // Backspace
+      XFillRectangle(dpy, pm, gcclear, x - 8, y, 8, 14);
       crtX--;
       return;
    }
 
-   XFillRectangle(dpy, pm, gcclear, x,y,8*s[0],14);
+   XFillRectangle(dpy, pm, gcclear, x, y, 8 * l, 14);
 
-   p=s+1;
-   while (p<=s+s[0]) {
+   p = s;
+   while (p < s + l) {
       switch (*p) {
          case 10:
-             newline=1;
-             if (p != s + s[0])
+             newline = 1;
+             if (p != s + l)
                fprintf (stderr,
                         "NOT IMPLEMENTED: newline in middle of string");
-             s[0]--;
+             l--;
              break;
-         case 248: *p=176; break; /* degree */
-         case 230: *p=181; break; /* mu */
+         case 248: *p = 176; break; /* degree */
+         case 230: *p = 181; break; /* mu */
          default:
            if (*p < 32 || *p > 127) {
                write_other (x + 8 * (p - s - 1), y, *p);
@@ -685,15 +678,19 @@ void DoWrite(unsigned char *s)
       p++;
    }
 
-   XDrawString(dpy, pm, gctext, x, y + fontyoffs, (const char *)s + 1, s[0]);
-   crtX+=s[0];
-   if (newline) { crtX=crtXmin; crtY++; }
+   XDrawString(dpy, pm, gctext, x, y + fontyoffs, (const char *)s, l);
+   crtX += l;
+   if (newline) { crtX = crtXmin; crtY++; }
 
    drawcounter++;
 }
 
-void DoWriteEnd(void)
+void
+PutCh (char ch)
 {
+  unsigned char s[] = { '_', '\0' };
+  s[0] = ch;
+  PutStr(s);
 }
 
 void getpascalcolours()
@@ -824,7 +821,7 @@ void PutBox(int32_t bn, int32_t x, int32_t y, int32_t width, int32_t height)
    but needed anyway to compile PUFF on Linux/X11.
 */
 
-int GetTimerTicks(void)
+int64_t GetTimerTicks(void)
 {
    struct timeval tv;
    struct timezone tz;
