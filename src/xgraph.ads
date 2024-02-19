@@ -116,6 +116,9 @@ package xgraph is
    procedure Window (X1, Y1, X2, Y2 : Integer_32);
    pragma Import (C, Window, "crtWindow");
 
+   procedure ResizeWindow (width, height : Integer_32);
+   pragma Import (C, ResizeWindow, "ResizeWindow");
+
    procedure GotoXY (X : Integer_32; Y : Integer_32);
    pragma Import (C, GotoXY, "GotoXY");
 

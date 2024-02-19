@@ -817,6 +817,11 @@ void PutBox(int32_t bn, int32_t x, int32_t y, int32_t width, int32_t height)
    XCopyArea(dpy, boxes[bn], pm, gc, 0, 0, width, height, x, y);
 }
 
+void ResizeWindow(int32_t width, int32_t height)
+{
+   XResizeWindow (dpy, w, width, height);
+}
+
 /* below are a few other routines, unrelated to the 'crt' and 'graph' units,
    but needed anyway to compile PUFF on Linux/X11.
 */

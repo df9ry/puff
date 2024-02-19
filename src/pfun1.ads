@@ -110,7 +110,6 @@ package pfun1 is
    Mu_0                   : Long_Float := 1.25664e-6;
 
    --  Types:
-   type textfile is new Ada.Text_IO.File_Type;
    type char_s is array (1 .. 112) of char;
 
    type Object is tagged
@@ -347,11 +346,8 @@ package pfun1 is
 
    procedure shutdown;
 
-   function File_Exists (note : Boolean; fname : Unbounded_String)
-                         return Boolean;
-
-   function Setup_Exists (fname : in out Unbounded_String)
-                          return Boolean;
+   function File_Exists_And_Open (file : in out Ada.Text_IO.File_Type;
+                         fname : Unbounded_String) return Boolean;
 
    procedure co (co : in out TComplex; s, t : Long_Float);
 

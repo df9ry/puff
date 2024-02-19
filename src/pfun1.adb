@@ -1,4 +1,3 @@
-with Ada.Directories;
 
 package body pfun1 is
 
@@ -111,74 +110,45 @@ package body pfun1 is
            Integer_32 (y2));
    end Clear_Window_gfx;
 
-   function File_Exists (note : Boolean;
-                         fname : Unbounded_String) return Boolean is
+   function File_Exists_And_Open (file : in out Ada.Text_IO.File_Type;
+                                  fname : Unbounded_String) return Boolean
+   is
    begin
-      if fname = "" or else not Ada.Directories.Exists (To_String (fname))
-      then
+      Ada.Text_IO.Open (file, In_File, To_String (fname));
+      return True;
+   exception
+      when Name_Error =>
          return False;
-      end if;
-      if note
-      then
-         message (2) := To_Unbounded_String ("File not found");
-         message (3) := fname;
-         Write_Message;
-         C_Delay (1000);
-      end if;
-      return False;
-   end File_Exists;
-
-   function Setup_Exists (fname : in out Unbounded_String) return Boolean is
-      Result_setupexists : Boolean;
-      found : Boolean;
-   begin
-      found := False;
-      message (2) := fname;
-      if fname /= "setup.puf"
-      then
-         fname := To_Unbounded_String ("setup.puf");
-         found := File_Exists (False, fname);
-      end if;
-      if not (found)
-      then
-         fname := To_Unbounded_String ("/PUFF/setup.puf");
-         found := File_Exists (False, fname);
-      end if;
-      if found
-      then
-         Erase_Message;
-         message (1) := To_Unbounded_String ("Missing board#");
-         message (2) := To_Unbounded_String ("Try");
-         message (3) := fname;
-         Write_Error (2.0);
-      end if;
-      Result_setupexists := found;
-      return Result_setupexists;
-   end Setup_Exists;
+      when others =>
+         Put_Line ("Other exception in File_Exists");
+         return False;
+   end File_Exists_And_Open;
 
    --  Called when a disastrous error condition
    --  has been reached to stop Puff.
    --  *
    procedure shutdown is
+      dummy : Integer_32;
    begin
       CloseGraph;
       TextMode (Integer_32 (OrigMode));
       message (1) := To_Unbounded_String ("FATAL ERROR:");
       Write_Message;
-      GotoXY (1, 23);
+      GotoXY (3, 23);
       PutStr (To_C ("Press any key to quit"));
+      dummy := ReadKey;
       loop
-         exit when KeyPressed /= 0;
+         exit when KeyPressed = 1;
       end loop;
       raise Program_halted with "Within shutdown";
    end shutdown;
 
    procedure Check_Reset (Self : in out Sweep'class; tcompt : compt) is
    begin
-      if (Self.element = tcompt) and then tcompt.all.changed
+      if (Self.element = tcompt) and then tcompt.changed
       then
          Init_Use (Self);
-         tcompt.all.sweep_compt := False;
+         tcompt.sweep_compt := False;
       end if;
    end Check_Reset;
 

@@ -13,4 +13,6 @@ begin
 exception
    when Program_halted =>
       Put_Line ("Regular program halt.");
+   when others =>
+      Put_Line ("Other exception occurred!");
 end puff;

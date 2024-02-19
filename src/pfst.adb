@@ -8,7 +8,7 @@ with xgraph;                  use xgraph;
 with pfun1;                   use pfun1;
 with utils;                   use utils;
 
-with Ada.Text_IO;
+with Ada.Text_IO;             use Ada.Text_IO;
 
 package body pfst is
 
@@ -138,6 +138,7 @@ package body pfst is
          message_color := White;
          Blank_Blue_Cursor;
          loop
+            ResizeWindow (Integer_32 (80 * 8), Integer_32 (32 * 15));
             Ch := char'Val (ReadKey);
             exit when Ch /= screenresize;
          end loop;
@@ -172,21 +173,35 @@ package body pfst is
       --  * Init_Puff_Parameters; *
       Prep_to_Read_Board;
       read_kbd := True;
+      if not File_Exists_And_Open (net_file, To_Unbounded_String ("setup.puf"))
+      then
+         Erase_Message;
+         message (2) := To_Unbounded_String ("setup.puf");
+         message (3) := To_Unbounded_String ("not found");
+         shutdown;
+      end if;
+      --  TODO: Parse here!
+      Close (net_file);
+      Put_Line ("0001 " & To_String (puff_file));
       if Tail (puff_file, 4) /= ".puf"
       then
          puff_file := puff_file & ".puf";
       end if;
-      if not File_Exists (puff_file /= "setup.puf", puff_file)
+      Put_Line ("0002 " & To_String (puff_file));
+      if puff_file /= "" and then not File_Exists_And_Open (net_file,
+                                                            puff_file)
       then
-         if not (Setup_Exists (puff_file))
-         then
-            Erase_Message;
-            message (2) := To_Unbounded_String ("setup.puf");
-            message (3) := To_Unbounded_String ("not found");
-            shutdown;
-         end if;
+         Put_Line ("0012");
+         Erase_Message;
+         message (2) := puff_file;
+         message (3) := To_Unbounded_String ("not found");
+         Put_Line ("0022");
+         shutdown;
+         Put_Line ("0032");
+      else
+         Close (net_file);
       end if;
-      Ada.Text_IO.Close (net_file);
+      Put_Line ("0003");
    end Puff_Start;
 
    procedure Screen_Init is
