@@ -1,16 +1,233 @@
 with Ada.Command_Line;        use Ada.Command_Line;
 with Ada.Strings;             use Ada.Strings;
 with Ada.Strings.Unbounded;   use Ada.Strings.Unbounded;
+with Ada.Text_IO;             use Ada.Text_IO;
 with Interfaces;              use Interfaces;
 with Interfaces.C;            use Interfaces.C;
 
 with xgraph;                  use xgraph;
+with pfrw;                    use pfrw;
 with pfun1;                   use pfun1;
-with utils;                   use utils;
-
-with Ada.Text_IO;             use Ada.Text_IO;
+with pfun2;                   use pfun2;
+with Utils;                   use Utils;
 
 package body pfst is
+
+   --  *
+   --  Set up linked list of components for all
+   --  parameters in the Plot window and
+   --  Board Window.
+   --  Called by Puff_Start.
+   --  *
+   procedure Make_Coord_and_Parts_ListO is
+      --  set-up coordinates linked list
+      tcompt : compt;
+   begin
+      for i in 1 .. 10
+      loop
+         if i = 1
+         then
+            coord_start := new compt_record;
+            tcompt := coord_start;
+         else
+            tcompt.next_compt := new compt_record;
+            tcompt.next_compt.prev_compt := tcompt;
+            tcompt := tcompt.next_compt;
+         end if;
+      end loop;
+      --  set-up parts linked list
+      tcompt.next_compt := coord_start;
+      coord_start.prev_compt := tcompt;
+      for i in 1 .. 18
+      loop
+         if i = 1
+         then
+            part_start := new compt_record;
+            tcompt := part_start;
+            tcompt.prev_compt := null;
+            tcompt.yp := ymin (3);
+         else
+            tcompt.next_compt := new compt_record;
+            tcompt.next_compt.prev_compt := tcompt;
+            tcompt := tcompt.next_compt;
+            tcompt.yp := tcompt.prev_compt.yp + 1;
+         end if;
+         declare P2Ada_Var_1 : compt_record renames tcompt.all;
+         begin
+            --  initialize for device and indef
+            P2Ada_Var_1.descript := To_Unbounded_String
+              ("" & Character'Val (LC_A_ORD + i - 1) & " ");
+            P2Ada_Var_1.changed := False;
+            P2Ada_Var_1.right := False;
+            P2Ada_Var_1.parsed := False;
+            P2Ada_Var_1.sweep_compt := False;
+            P2Ada_Var_1.f_file := null;
+            P2Ada_Var_1.s_file := null;
+            P2Ada_Var_1.s_ifile := null;
+            P2Ada_Var_1.used := 0;
+            P2Ada_Var_1.x_block := 2;
+            if i <= 9
+            then
+               P2Ada_Var_1.xp := xmin (3);
+               P2Ada_Var_1.xmaxl := xmax (3) - xmin (3);
+            else
+               P2Ada_Var_1.xp := xmin (5);
+               P2Ada_Var_1.xmaxl := xmax (5) - xmin (5);
+            end if;
+         end;
+         --  [P2Ada]: end of WITH
+         --  with
+      end loop;
+      --  i
+      --  set-up board linked list beginning at board_start
+      tcompt.all.next_compt := null;
+      for i in 1 .. 6
+      loop
+         if i = 1
+         then
+            board_start := new compt_record;
+            tcompt := board_start;
+            tcompt.prev_compt := null;
+         else
+            tcompt.next_compt := new compt_record;
+            tcompt.next_compt.prev_compt := tcompt;
+            tcompt := tcompt.next_compt;
+         end if;
+      end loop;
+      --  i
+      tcompt.next_compt := null;
+   end Make_Coord_and_Parts_ListO;
+
+   --  Set up titles for the three windows.
+   --  *
+   procedure Make_Titles is
+   begin
+      for i in 1 .. 4
+      loop
+         --  was to 3
+         window_f (i) := new compt_record;
+         command_f (i) := new compt_record;
+         case i is when 1 =>
+            declare P2Ada_Var_2 : compt renames window_f (1);
+            begin
+               --  xp was 2
+               P2Ada_Var_2.xp := layout_position (1);
+               P2Ada_Var_2.yp := layout_position (2);
+               P2Ada_Var_2.descript := To_Unbounded_String (" F1 : LAYOUT ");
+            end;
+            declare P2Ada_Var_3 : compt renames command_f (1);
+            begin
+               --  place header above board window
+               P2Ada_Var_3.descript := To_Unbounded_String (" LAYOUT HELP ");
+               P2Ada_Var_3.xp := 1 + (xmax (4) + xmin (4) -
+                                      Length (P2Ada_Var_3.descript)) / 2;
+               P2Ada_Var_3.yp := ymin (4) - 1;
+            end;
+         when 2 =>
+            declare P2Ada_Var_4 : compt renames window_f (2);
+            begin
+               --  xp was 41
+               P2Ada_Var_4.descript := To_Unbounded_String (" F2 : PLOT ");
+               P2Ada_Var_4.xp := 1 + (xmax (2) + xmin (2) -
+                                      Length (P2Ada_Var_4.descript)) / 2;
+               P2Ada_Var_4.yp := ymin (2) - 1;
+            end;
+            declare P2Ada_Var_5 : compt renames command_f (2);
+            begin
+               P2Ada_Var_5.descript := To_Unbounded_String (" PLOT HELP ");
+               P2Ada_Var_5.xp := 1 + (xmax (4) + xmin (4) -
+                                      Length (P2Ada_Var_5.descript)) / 2;
+               P2Ada_Var_5.yp := ymin (4) - 1;
+            end;
+         when 3 =>
+            declare P2Ada_Var_6 : compt renames window_f (3);
+            begin
+               --  xp was 2
+               P2Ada_Var_6.descript := To_Unbounded_String (" F3 : PARTS ");
+               P2Ada_Var_6.xp := 1 + (xmax (3) + xmin (3) -
+                                      Length (P2Ada_Var_6.descript)) / 2;
+               P2Ada_Var_6.yp := ymin (3) - 1;
+            end;
+            declare P2Ada_Var_7 : compt renames command_f (3);
+            begin
+               --  place header above board window
+               P2Ada_Var_7.descript := To_Unbounded_String (" PARTS HELP ");
+               P2Ada_Var_7.xp := 1 + (xmax (4) + xmin (4) -
+                                      Length (P2Ada_Var_7.descript)) / 2;
+               P2Ada_Var_7.yp := ymin (4) - 1;
+            end;
+         when 4 =>
+            declare P2Ada_Var_8 : compt renames window_f (4);
+            begin
+               --  xp was 2
+               P2Ada_Var_8.descript := To_Unbounded_String (" F4 : BOARD ");
+               P2Ada_Var_8.xp := 1 + (xmax (4) + xmin (4) -
+                                      Length (P2Ada_Var_8.descript)) / 2;
+               P2Ada_Var_8.yp := ymin (4) - 1;
+            end;
+            declare P2Ada_Var_9 : compt renames command_f (4);
+            begin
+               P2Ada_Var_9.descript := To_Unbounded_String (" BOARD HELP ");
+               P2Ada_Var_9.xp := 1 + (xmax (3) + xmin (3) -
+                                      Length (P2Ada_Var_9.descript)) / 2;
+               P2Ada_Var_9.yp := ymin (3) - 1;
+            end;
+         end case;
+      end loop;
+   end Make_Titles;
+
+--  Initializes linked lists and windows.
+   --  Set up to be called only after the board
+   --  parameters have been read, but before the key!
+   --  Set_Up_Board must be called sometime after
+   --  this procedure when reading new graphics.
+   --  *
+   procedure Init_Puff_Parameters is
+      --  * Initialize s-parameter linked lists *
+      cspc : spline_param;
+   begin
+      for xpt in 0 .. ptmax
+      loop
+         if xpt = 0
+         then
+            spline_start := new spline_record;
+            cspc := spline_start;
+         else
+            cspc.next_c := new spline_record;
+            cspc.next_c.prev_c := cspc;
+            cspc := cspc.all.next_c;
+         end if;
+         for ij in 1 .. max_params
+         loop
+            if xpt = 0
+            then
+               plot_start (ij) := new plot_record;
+               c_plot (ij) := plot_start (ij);
+            else
+               c_plot (ij).next_p := new plot_record;
+               c_plot (ij).next_p.prev_p := c_plot (ij);
+               c_plot (ij) := c_plot (ij).next_p;
+            end if;
+         end loop;
+      end loop;
+      --  xpt
+      --  * Prep to read key *
+      Make_Coord_and_Parts_ListO;
+      compt1 := null;
+      Make_Titles;
+      for i in 1 .. 6
+      loop
+         s_key (i) := To_Unbounded_String (" ");
+      end loop;
+      for i in 7 .. 10
+      loop
+         s_key (i) := To_Unbounded_String ("");
+      end loop;
+      --  pfun2
+      --  begin with impedance Smith chart
+      Set_Up_KeyO;
+      admit_chart := False;
+   end Init_Puff_Parameters;
 
    function CommandLine return String is
       Buffer : Unbounded_String := To_Unbounded_String ("setup");
@@ -180,33 +397,60 @@ package body pfst is
          message (3) := To_Unbounded_String ("not found");
          shutdown;
       end if;
-      --  TODO: Parse here!
+      Read_Net (net_file, False);
       Close (net_file);
-      Put_Line ("0001 " & To_String (puff_file));
       if Tail (puff_file, 4) /= ".puf"
       then
          puff_file := puff_file & ".puf";
       end if;
-      Put_Line ("0002 " & To_String (puff_file));
       if puff_file /= "" and then not File_Exists_And_Open (net_file,
                                                             puff_file)
       then
-         Put_Line ("0012");
          Erase_Message;
          message (2) := puff_file;
          message (3) := To_Unbounded_String ("not found");
-         Put_Line ("0022");
          shutdown;
-         Put_Line ("0032");
       else
+         Read_Net (net_file, True);
          Close (net_file);
       end if;
-      Put_Line ("0003");
    end Puff_Start;
 
    procedure Screen_Init is
+      Gr_Error_Code : Integer_32;
+      --  msg : String;
    begin
-      null;
+      Screen_Plan;
+      Clear_Window_gfx (xmin (12), ymin (12), xmax (12), ymax (12));
+      Init_Puff_Parameters;
+      InitGraph (GraphDriver, GraphMode, "");
+      Gr_Error_Code := GraphResult;
+      if Gr_Error_Code /= GROK
+      then
+         TextMode (Integer_32 (OrigMode));
+         Put ("Graphics error: ");
+         --  msg := To_String (Gr_Error_Code);
+         --  Put (msg);
+         New_Line;
+         raise Program_halted with "Within Screen_Init";
+      end if;
+      --  error message
+      --  Write text characters thru BIOS
+      --  DirectVideo is a CRT unit var
+      --  needed to mix text with graphics
+      --  * MESSAGE Box *
+      --  * PLOT Box *
+      DirectVideo := False;
+      message_color := LightRed;
+      Make_Text_Border (xmin (6) - 1, ymin (6) - 1, xmax (6) + 1, ymax (6) + 1,
+                        LightRed, True);
+      Make_Text_Border (xmin (2) - 1, ymin (2) - 1, xmax (2) + 1, ymax (2) + 1,
+                        Green, True);
+      bad_compt := False;
+      write_compt (col_window (2), window_f (2));
+      key := F3;
+      compt3 := part_start;
+      cx3 := compt3.all.x_block;
    end Screen_Init;
 
    procedure Screen_Plan is

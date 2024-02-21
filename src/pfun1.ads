@@ -5,7 +5,7 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 with Interfaces.C;          use Interfaces.C;
 
 with xgraph;                use xgraph;
-with utils;                 use utils;
+with Utils;                 use Utils;
 
 with Ada.Unchecked_Deallocation;
 
@@ -292,6 +292,9 @@ package pfun1 is
    compt1, compt3, dBmax_ptr, fmin_ptr : compt;
    netK, netL, cnet, net_start : net;
 
+   procedure Make_Text_Border (x1, y1, x2, y2, colour : Integer;
+                               single : Boolean);
+
    procedure Dispose is new Ada.Unchecked_Deallocation
      (s_parameter_record, s_param);
 
@@ -309,6 +312,12 @@ package pfun1 is
 
    procedure Dispose is new Ada.Unchecked_Deallocation
      (compt_record, compt);
+
+   procedure Release_Mem (P : marker);
+
+   function Marked (P : marker) return Boolean;
+
+   procedure Mark_Mem (P : in out marker);
 
    procedure Init_Use (Self : in out Sweep'class);
 
@@ -330,15 +339,23 @@ package pfun1 is
 
    procedure TextCol (col : Unsigned_16);
 
+   procedure SetCol (col : Unsigned_16);
+
    procedure Write_Message;
 
    procedure Write_Error (time : Long_Float);
 
    procedure Erase_Message;
 
+   procedure Erase_Circuit;
+
    procedure Clear_Window (x1, y1, x2, y2 : Integer);
 
    procedure Clear_Window_gfx (x1, y1, x2, y2 : Integer);
+
+   procedure Draw_Box (xs, ys, xm, ym, color : Integer);
+
+   procedure fill_box (x1, y1, x2, y2, color : Integer);
 
    procedure rcdelay (j : Integer);
 
@@ -350,5 +367,21 @@ package pfun1 is
                          fname : Unbounded_String) return Boolean;
 
    procedure co (co : in out TComplex; s, t : Long_Float);
+
+   function kkk (x : Long_Float) return Long_Float;
+
+   function widtht (zed : Long_Float) return Long_Float;
+
+   procedure write_compt (color : Integer; tcompt : compt);
+
+   procedure write_comptm (m, color : Integer; tcompt : compt);
+
+   function Get_Real (tcompt : compt; n : Integer) return Long_Float;
+
+   procedure update_key_list (nn : Integer);
+
+   procedure Pars_Compt_List;
+
+   procedure Init_Marker (P : in out marker);
 
 end pfun1;

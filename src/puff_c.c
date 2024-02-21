@@ -226,6 +226,13 @@ int GraphResult()
    return GROK;
 }
 
+const static char* ERC_OK = "NO ERROR";
+
+const char* GraphErrorMsg(int32_t erc)
+{
+  return ERC_OK;
+}
+
 int crtX=1,crtY=1;
 int crtXmin=1, crtXmax=80, crtYmin=1, crtYmax=34;
 

@@ -1,5 +1,6 @@
-with Interfaces;   use Interfaces;
-with Interfaces.C; use Interfaces.C;
+with Interfaces;           use Interfaces;
+with Interfaces.C;         use Interfaces.C;
+with Interfaces.C.Strings; use Interfaces.C.Strings;
 
 package xgraph is
 
@@ -53,7 +54,7 @@ package xgraph is
    procedure CloseGraph;
    pragma Import (C, CloseGraph, "CloseGraph");
 
-   procedure SetColor (Color : Integer_32);
+   procedure SetColor (Color : Unsigned_16);
    pragma Import (C, SetColor, "SetColor");
 
    procedure SetFillStyle (Pattern, Color : Integer_32);
@@ -100,6 +101,9 @@ package xgraph is
 
    procedure SetBkColor (Color : Unsigned_16);
    pragma Import (C, SetBkColor, "SetBkColor");
+
+   function  GraphErrorMsg (ErrorCode : Integer_32) return char_array_access;
+   pragma Import (C, GraphErrorMsg, "GraphErrorMsg");
 
    function GraphResult return Integer_32;
    pragma Import (C, GraphResult, "GraphResult");

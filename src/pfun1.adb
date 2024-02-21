@@ -1,10 +1,355 @@
 
+with Ada.Numerics.Long_Elementary_Functions;
+use  Ada.Numerics.Long_Elementary_Functions;
+
+with pfun1; use pfun1;
+with pfun2; use pfun2;
+with pfun3; use pfun3;
+with pfmsc; use pfmsc;
+
 package body pfun1 is
+
+   --  memsize : constant := 2 * 1024 * 1024;
+   --  membase : Integer_32;
+   memused : Integer_32;
+
+   procedure Init_Marker (P : in out marker) is
+   begin
+      P.Used := -1;
+   end Init_Marker;
+
+   --  *
+   --  Pars the component list.
+   --  If action=true then find part dimensions
+   --  else find s-parameters.
+   --  Careful here on memory management!
+   --  *
+   procedure Pars_Compt_List is
+      pars, reload_all_devices : Boolean;
+      tcompt : compt;
+      i_or_d : constant CharacterArray := ('i', 'd');
+   begin
+      if action
+      then
+         --  Check for alt_sweep and device file changes
+         tcompt := null;
+         reload_all_devices := False;
+         loop
+            --  step through and Reset if a sweep_compt was changed
+            if tcompt = null
+            then
+               tcompt := part_start;
+            else
+               tcompt := tcompt.all.next_compt;
+            end if;
+            x_sweep.Check_Reset (tcompt);
+            if tcompt.changed and then
+               is_in (get_lead_charO (tcompt), i_or_d)
+            then
+               if Marked (dev_beg)
+               then
+                  Release_Mem (dev_beg);
+               end if;
+               Mark_Mem (dev_beg);
+               Init_Marker (net_beg);
+               circuit_changed := True;
+               reload_all_devices := True;
+            end if;
+            exit when tcompt.next_compt = null;
+         end loop;
+         if reload_all_devices
+         then
+            --  Check for unchanged devic files
+            tcompt := null;
+            loop
+               --  force all device files to be reloaded at marker dev_beg
+               if tcompt = null
+               then
+                  tcompt := part_start;
+               else
+                  tcompt := tcompt.all.next_compt;
+               end if;
+               --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
+               if is_in (get_lead_charO (tcompt), i_or_d)
+               then
+                  tcompt.changed := True;
+               end if;
+               exit when tcompt.next_compt = null;
+            end loop;
+         end if;
+      end if;
+      tcompt := null;
+      bad_compt := False;
+      loop
+         if tcompt = null
+         then
+            tcompt := part_start;
+         else
+            tcompt := tcompt.all.next_compt;
+         end if;
+         --  [P2Ada]: WITH instruction
+         --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_3.' to fields
+         declare P2Ada_Var_3 : compt_record renames tcompt.all;
+         begin
+            if P2Ada_Var_3.changed and then
+              (P2Ada_Var_3.used > 0 or else P2Ada_Var_3.step)
+            then
+               circuit_changed := True;
+            end if;
+            if action
+            then
+               pars := P2Ada_Var_3.changed;
+            else
+               pars := P2Ada_Var_3.used > 0;
+            end if;
+            if pars
+            then
+               P2Ada_Var_3.parsed := True;
+               if action
+               then
+                  --  init to check for alt_sweep-needed?
+                  P2Ada_Var_3.typ := To_C (get_lead_charO (tcompt));
+                  P2Ada_Var_3.sweep_compt := False;
+               end if;
+               case P2Ada_Var_3.typ is
+                  when 't' =>
+                     tlineO (tcompt);
+                  when 'q' =>
+                     qline (tcompt);
+                  when 'c' =>
+                     clinesO (tcompt);
+                  when 'd' | 'i' =>
+                     if action
+                     then
+                        Device_Read (tcompt, (P2Ada_Var_3.typ = 'i'));
+                     else
+                        Device_S (tcompt, (P2Ada_Var_3.typ = 'i'));
+                     end if;
+                  when 'l' =>
+                     lumpedO (tcompt);
+                  when 'x' =>
+                     Transformer (tcompt);
+                  when 'a' =>
+                     Attenuator (tcompt);
+                  when ' ' =>
+                     P2Ada_Var_3.parsed := False;
+                  when others =>
+                     begin
+                        P2Ada_Var_3.parsed := False;
+                        bad_compt := True;
+                        message (1) := To_Unbounded_String
+                          ("" & Character (P2Ada_Var_3.typ) & " is an");
+                        message (2) := To_Unbounded_String ("unknown part");
+                     end;
+               end case;
+               --  case
+            end if;
+            --  if pars
+            if not (bad_compt)
+            then
+               P2Ada_Var_3.changed := False;
+            else
+               if window_number = 3
+               then
+                  ccompt := tcompt;
+               end if;
+            end if;
+         end;
+         --  [P2Ada]: end of WITH
+         --  with
+         exit when tcompt.next_compt = null or else bad_compt;
+      end loop;
+      if bad_compt
+      then
+         Write_Message;
+      end if;
+   end Pars_Compt_List;
+
+   --  This procedure has been drastically reduced using
+   --  Turbo Pascal graphics.
+   --  Used for erasing sections of the screen (color=brown)
+   --  and for drawing tlines (color=white).
+   --  *
+   procedure fill_box (x1, y1, x2, y2, color : Integer) is
+   begin
+      if blackwhite
+      then
+         SetFillStyle (SOLIDFILL, White);
+      else
+         SetFillStyle (SOLIDFILL, Integer_32 (color));
+      end if;
+      Bar (Integer_32 (x1), Integer_32 (y1), Integer_32 (x2),
+           Integer_32 (y2));
+   end fill_box;
+
+   --  *
+   --  Update array which contains keystrokes used to layout circuit.
+   --  *
+   procedure update_key_list (nn : Integer) is
+   begin
+      if key_end = 0
+      then
+         key_end := 1;
+      else
+         key_end := key_end + 1;
+      end if;
+      if key_end = key_max
+      then
+         key_end := key_max - 1;
+         message (1) := To_Unbounded_String ("Circuit is too");
+         message (2) := To_Unbounded_String ("complex for");
+         message (3) := To_Unbounded_String ("redraw");
+         Write_Message;
+      end if;
+      key_list (key_end).keyl := key;
+      key_list (key_end).noden := nn;
+   end update_key_list;
+
+   procedure SetCol (col : Unsigned_16) is
+   begin
+      if blackwhite
+      then
+         case col is
+            when 0 =>
+               --  1..7 : SetColor(lightgray);
+               SetColor (0);
+            when 8 =>
+               SetColor (0);
+            when others =>
+               SetColor (White);
+         end case;
+      else
+         SetColor (col);
+      end if;
+   end SetCol;
+
+   procedure Draw_Box (xs, ys, xm, ym, color : Integer) is
+   begin
+      SetCol (Unsigned_16 (color));
+      Rectangle (Integer_32 (xs), Integer_32 (ys), Integer_32 (xm),
+                 Integer_32 (ym));
+   end Draw_Box;
+
+   --  Erase circuit board. Redraw if read_kbd=false.
+   --  Check to see if device files need to be re-copied into memory.
+   --  Very significant memory management control here
+   --  involving the net_beg pointer.
+   --  Called by:
+   --  Redraw_Circuit,
+   --  Read_Net (after or if not board_read),
+   --  Lpayout1 (if Ctrl_e),
+   --  Parts3 (if Ctrl_e)
+   --  *
+   procedure Erase_Circuit is
+   begin
+      Erase_Message;
+      if compt1 /= null
+      then
+         write_compt (LightGray, compt1);
+      end if;
+      compt1 := part_start;
+      if Marked (net_beg)
+      then
+         Release_Mem (net_beg);
+      end if;
+      --  release networks memory
+      --  set_up for redraw
+      Mark_Mem (net_beg);
+      key_i := 0;
+      if read_kbd
+      then
+         --  erase key_list
+         filled_OK := False;
+         circuit_changed := False;
+         board_changed := False;
+         marker_OK := False;
+         key_end := 0;
+         Extra_Parts_Used := False;
+      end if;
+      net_start := null;
+      cnet := null;
+      Draw_Circuit;
+   end Erase_Circuit;
+
+   --  procedure Init_Mem is
+   --  begin
+   --     getmem (membase, memsize);
+   --     if (membase = null)
+   --     then
+   --        Put ("Memory allocation error!!");
+   --        New_Line;
+   --        raise Program_halted;
+   --     end if;
+   --     memused := 0;
+   --  end Init_Mem;
+
+   --  *
+   --  Creates text border pattern for start screen and other windows
+   --  *
+   procedure Make_Text_Border (x1, y1, x2, y2, colour : Integer;
+                               single : Boolean)
+   is
+      sing_vert : constant Character := Character'Val (179);
+      doub_vert : constant Character := Character'Val (186);
+      --  sing_horz : constant Character := Character'Val (196);
+      doub_horz : constant Character := Character'Val (205);
+      sing_UL   : constant Character := Character'Val (213);
+      doub_UL   : constant Character := Character'Val (201);
+      sing_UR   : constant Character := Character'Val (184);
+      doub_UR   : constant Character := Character'Val (187);
+      sing_LL   : constant Character := Character'Val (212);
+      doub_LL   : constant Character := Character'Val (200);
+      sing_LR   : constant Character := Character'Val (190);
+      doub_LR   : constant Character := Character'Val (188);
+      vert, horz, UL, UR, LL, LR : Character;
+   begin
+      if single
+      then
+         vert := sing_vert;
+         horz := doub_horz;
+         UL := sing_UL;
+         UR := sing_UR;
+         LL := sing_LL;
+         LR := sing_LR;
+      else
+         vert := doub_vert;
+         horz := doub_horz;
+         UL := doub_UL;
+         UR := doub_UR;
+         LL := doub_LL;
+         LR := doub_LR;
+      end if;
+      --  clear area
+      Clear_Window (x1, y1, x2, y2);
+      TextCol (Unsigned_16 (colour));
+      for i in y1 .. y2
+      loop
+         --  * Draw Border for startup screen *
+         GotoXY (Integer_32 (x1), Integer_32 (i));
+         Put (vert);
+         GotoXY (Integer_32 (x2), Integer_32 (i));
+         Put (vert);
+      end loop;
+      for i in x1 .. x2
+      loop
+         GotoXY (Integer_32 (i), Integer_32 (y1));
+         Put (horz);
+         GotoXY (Integer_32 (i), Integer_32 (y2));
+         Put (horz);
+      end loop;
+      GotoXY (Integer_32 (x1), Integer_32 (y1));
+      Put (UL);
+      GotoXY (Integer_32 (x2), Integer_32 (y1));
+      Put (UR);
+      GotoXY (Integer_32 (x1), Integer_32 (y2));
+      Put (LL);
+      GotoXY (Integer_32 (x2), Integer_32 (y2));
+      Put (LR);
+   end Make_Text_Border;
 
    --  *
    --  Create a complex number type.
    --  *
-
    procedure co (co : in out TComplex; s, t : Long_Float) is
    begin
       co.r := s;
@@ -323,5 +668,188 @@ package body pfun1 is
          TextColor (col);
       end if;
    end TextCol;
+
+   --  Function for calculating width in mils of microstrip
+   --  and stripline transmission lines.  See Puff manual
+   --  pages 12-13 for details.
+   --  Microstrip models are from Owens:
+   --  Radio and Elect Eng, 46, pp 360-364, 1976.
+   --  Stripline models are from  Cohn:
+   --  MTT-3 pp19-126, March 1955.
+   --  See also Gupta, Garg, Chadha:
+   --  CAD of Microwave Circuits Artech House, 1981.
+   --  *
+   function widtht (zed : Long_Float) return Long_Float is
+      Result_widtht : Long_Float;
+      lnpi_2 : constant := 0.451583;
+      ln4_pi : constant := 0.241564;
+      Hp, expH, de, x : Long_Float;
+
+      procedure High_Z_Error is
+      begin
+         bad_compt := True;
+         message (1) := To_Unbounded_String ("Impedance");
+         message (2) := To_Unbounded_String ("too large");
+         Result_widtht := 0.0;
+      end High_Z_Error;
+   begin
+      if stripline
+      then
+         x := zed * Sqrt (er) / (30.0 * Pi);
+         if Pi * x > 87.0
+         then
+            --  or else kkk(x) will explode
+            High_Z_Error;
+         else
+            Result_widtht := substrate_h * 2.0 * Arctanh (kkk (x)) / Pi;
+         end if;
+         --  Use kkk for k factor
+         --  if microstripline then
+      else
+         if zed > (44.0 - 2.0 * er)
+         then
+            Hp := (zed / 120.0) * Sqrt (2.0 * (er + 1.0)) + (er - 1.0) *
+              (lnpi_2 + ln4_pi / er) / (2.0 * (er + 1.0));
+            if Hp > 87.0
+            then
+               --  e^87 = 6.0e37
+               High_Z_Error;
+            else
+               expH := Exp (Hp);
+               Result_widtht := substrate_h /
+                 (expH / 8.0 - 1.0 / (4.0 * expH));
+            end if;
+            --  if zed <= (44-2*er)
+         else
+            de := 60.0 * ((Pi) ** 2.0) / (zed * Sqrt (er));
+            Result_widtht := substrate_h * (2.0 / Pi * ((de - 1.0) -
+                                Log (2.0 * de - 1.0)) + (er - 1.0) *
+                                (Log (de - 1.0) + 0.293 - 0.517 / er) /
+                                (Pi * er));
+         end if;
+         --  if zed
+      end if;
+      --  if stripline
+      return Result_widtht;
+   end widtht;
+
+   procedure write_compt (color : Integer; tcompt : compt) is
+   begin
+      TextCol (Unsigned_16 (color));
+      declare P2Ada_Var_1 : compt_record renames tcompt.all;
+      begin
+         GotoXY (Integer_32 (P2Ada_Var_1.xp), Integer_32 (P2Ada_Var_1.yp));
+         Put (To_String (P2Ada_Var_1.descript));
+      end;
+      --  [P2Ada]: end of WITH
+   end write_compt;
+
+   --  * write_compt *
+   --  *
+   --  Display the first m characters of a component.
+   --  *
+
+   procedure write_comptm (m, color : Integer; tcompt : compt) is
+   begin
+      TextCol (Unsigned_16 (color));
+      declare P2Ada_Var_2 : compt_record renames tcompt.all;
+      begin
+         GotoXY (Integer_32 (P2Ada_Var_2.xp), Integer_32 (P2Ada_Var_2.yp));
+         for i in 1 .. m
+         loop
+            Put (To_String (P2Ada_Var_2.descript));
+         end loop;
+      end;
+      --  [P2Ada]: end of WITH
+   end write_comptm;
+
+   function Marked (P : marker) return Boolean is
+      Result_Marked : Boolean;
+   begin
+      Result_Marked := (P.Used >= 0);
+      return Result_Marked;
+   end Marked;
+
+   procedure Release_Mem (P : marker) is
+   begin
+      if P.Used >= 0
+      then
+         memused := P.Used;
+      end if;
+   end Release_Mem;
+
+   procedure Mark_Mem (P : in out marker) is
+   begin
+      P.Used := memused;
+   end Mark_Mem;
+
+   --  *
+   --  Function used to calculate Cohn's "k" factor for stripline
+   --  width formulas.  See equation 3.6, page 13 of the Puff Manual.
+   --  Used by widthO, w_s_stripline_cline.
+   --  *
+   function kkk (x : Long_Float) return Long_Float is
+      Result_kkk : Long_Float;
+      expx : Long_Float;
+   begin
+      if x > 1.0
+      then
+         expx := Exp (Pi * x);
+         Result_kkk := Sqrt (1.0 - (((((expx - 2.0) /
+                             (expx + 2.0)) ** 2.0)) ** 2.0));
+      else
+         expx := Exp (Pi / x);
+         Result_kkk := (((expx - 2.0) / (expx + 2.0)) ** 2.0);
+      end if;
+      return Result_kkk;
+   end kkk;
+
+   function Get_Real (tcompt : compt; n : Integer) return Long_Float is
+      --  Result_Get_Real : Long_Float;
+      --  c_string, s_value : line_string;
+      --  j, code, long : integer;
+      --  value : Long_Float;
+      --  found : boolean;
+   begin
+      --  c_string := tcompt.all.descript;
+      --  j := goto_numeral (n, c_string);
+      if bad_compt
+      then
+         ccompt := tcompt;
+         return Long_Float (n);
+      end if;
+      --  s_value := "";
+      --  long := (c_string'length);
+      --  found := false;
+      --  loop
+      --     --  '+',
+      --     --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
+      --     if c_string (j) and ('-' | '.' | ',' | '0' .. '9' => True,
+      --                                                others => False)
+      --     then
+      --        if c_string (j) = ','
+      --        then
+      --           s_value := s_value + '.';
+      --        else
+      --           s_value := s_value + c_string (j);
+      --        end if;
+      --        j := j + 1;
+      --     else
+      --        found := True;
+      --     end if;
+      --     exit when (found or else (j = long + 1));
+      --  end loop;
+      --  Val (s_value, value, code);
+      --  if (code /= 0) or else ((s_value'length) = 0)
+      --  then
+      --     ccompt := tcompt;
+      --     bad_compt := True;
+      --     message (2) := "Invalid number";
+      --     return Result_Get_Real;
+      --  end if;
+      --  get_real := value;
+      --  return Result_Get_Real;
+      return 0.0;
+   end Get_Real;
 
 end pfun1;

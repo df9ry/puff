@@ -1,3 +1,4 @@
+
 package body Utils is
 
    function is_in (ch : char; rg : CharArray) return Boolean is
@@ -21,5 +22,10 @@ package body Utils is
       end loop;
       return False;
    end is_in;
+
+   function Round (x : Long_Float) return Integer is
+   begin
+      return Integer (Long_Float'Rounding (x));
+   end Round;
 
 end Utils;
