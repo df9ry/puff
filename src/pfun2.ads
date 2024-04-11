@@ -41,4 +41,10 @@ package pfun2 is
 
    function look_backO return Boolean;
 
+   procedure super_stripline (tcompt : compt);
+
+   procedure super_microstrip (tcompt : compt);
+
+   procedure ms_dispersion (tcompt : compt);
+
 end pfun2;

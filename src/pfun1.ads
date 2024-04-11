@@ -384,4 +384,23 @@ package pfun1 is
 
    procedure Init_Marker (P : in out marker);
 
+   function betweenr (x1, x2, x3, sigma : Long_Float) return Boolean;
+
+   procedure increment_pos (i : Integer);
+
+   procedure dirn_xy;
+
+   function super_line (tcompt : compt) return Boolean;
+
+   function goto_numeral (n : Integer; x : Unbounded_String) return Integer;
+
+   procedure Get_Param (tcompt       : compt;
+                        n            : Integer;
+                        value        : in out Long_Float;
+                        value_string : in out Unbounded_String;
+                        u1, prefix   : in out Character;
+                        alt_param    : in out Boolean);
+
+   function Eng_Prefix (c : Character) return Long_Float;
+
 end pfun1;

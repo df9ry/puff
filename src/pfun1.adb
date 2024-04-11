@@ -524,41 +524,6 @@ package body pfun1 is
       end if;
    end Label_Plot_Box;
 
-   function Eng_Prefix (c : char) return Long_Float is
-      Result_Eng_Prefix : Long_Float;
-   begin
-      case c is
-         when 'E' =>
-            Result_Eng_Prefix := 1.0e+18;
-         when 'P' =>
-            Result_Eng_Prefix := 1.0e+15;
-         when 'T' =>
-            Result_Eng_Prefix := 1.0e+12;
-         when 'G' =>
-            Result_Eng_Prefix := 1.0e+09;
-         when 'M' =>
-            Result_Eng_Prefix := 1.0e+06;
-         when 'k' =>
-            Result_Eng_Prefix := 1.0e+03;
-         when 'm' =>
-            Result_Eng_Prefix := 1.0e-03;
-         when Mu =>
-            Result_Eng_Prefix := 1.0e-06;
-         when 'n' =>
-            Result_Eng_Prefix := 1.0e-09;
-         when 'p' =>
-            Result_Eng_Prefix := 1.0e-12;
-         when 'f' =>
-            Result_Eng_Prefix := 1.0e-15;
-         when 'a' =>
-            Result_Eng_Prefix := 1.0e-18;
-         when others =>
-            Result_Eng_Prefix := 1.0;
-      end case;
-      --  case
-      return Result_Eng_Prefix;
-   end Eng_Prefix;
-
    procedure Load_Prop_Const (Self : in out Sweep'class;
                               prop_consta, prop_constb : Long_Float)
    is
@@ -602,7 +567,8 @@ package body pfun1 is
          Self.element := tcompt;
          Self.id := in_id;
          Self.prefix := in_prefix;
-         Self.Omega0 := 2.0 * Pi * design_freq * Eng_Prefix (freq_prefix);
+         Self.Omega0 := 2.0 * Pi * design_freq *
+           Eng_Prefix (Character (freq_prefix));
          Self.units := in_unit;
          Alt_Sweep := True;
          tcompt.all.sweep_compt := True;
@@ -851,5 +817,365 @@ package body pfun1 is
       --  return Result_Get_Real;
       return 0.0;
    end Get_Real;
+
+   function betweenr (x1, x2, x3, sigma : Long_Float) return Boolean is
+      Result_betweenr : Boolean;
+   begin
+      if x1 > x3
+      then
+         if (x3 - sigma <= x2) and then (x2 <= x1 + sigma)
+         then
+            Result_betweenr := True;
+         else
+            Result_betweenr := False;
+         end if;
+      else
+         if (x1 - sigma <= x2) and then (x2 <= x3 + sigma)
+         then
+            Result_betweenr := True;
+         else
+            Result_betweenr := False;
+         end if;
+      end if;
+      return Result_betweenr;
+   end betweenr;
+
+   procedure dirn_xy is
+   begin
+      xii := 0;
+      yii := 0;
+      case dirn is
+         when 2 =>
+            --  East
+            xii := 1;
+         when 4 =>
+            --  West
+            xii := -1;
+         when 8 =>
+            --  South
+            yii := 1;
+         when 1 =>
+            --  North
+            yii := -1;
+         when others =>
+            null;
+      end case;
+   end dirn_xy;
+
+   procedure increment_pos (i : Integer) is
+   begin
+      dirn_xy;
+      if (i) mod 2 /= 0
+      then
+         if i = -1
+         then
+            xm := xm + (compt1.lngth * Long_Float (xii)
+                     + Long_Float (yii) * compt1.con_space) / 2.0;
+            ym := ym + (compt1.lngth * Long_Float (yii)
+                     + Long_Float (xii) * compt1.con_space) / 2.0;
+         else
+            if compt1.typ = 'i' or else compt1.typ = 'd'
+            then
+               if compt1.all.number_of_con /= 1
+               then
+                  xm := xm + lengthxm * Long_Float (xii) /
+                    Long_Float (compt1.number_of_con - 1);
+                  ym := ym + lengthym * Long_Float (yii) /
+                    Long_Float (compt1.all.number_of_con - 1);
+               end if;
+            else
+               xm := xm + lengthxm * Long_Float (xii);
+               ym := ym + lengthym * Long_Float (yii);
+            end if;
+         end if;
+      else
+         if i = 0
+         then
+            xm := cnet.xr;
+            ym := cnet.yr;
+         else
+            if compt1.typ = 'i' or else compt1.typ = 'd'
+            then
+               xm := xm + lengthxm * Long_Float (xii) /
+                 Long_Float (compt1.all.number_of_con - 1);
+               ym := ym + lengthym * Long_Float (yii) /
+                 Long_Float (compt1.all.number_of_con - 1);
+            else
+               xm := xm + lengthxm * Long_Float (xii)
+                 - compt1.con_space * Long_Float (yii);
+               ym := ym + lengthym * Long_Float (yii)
+                 - compt1.con_space * Long_Float (xii);
+            end if;
+         end if;
+         --  if i else
+      end if;
+      --  if odd else
+      --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
+      xi := Round (xm / csx);
+      yi := Round (ym / csy);
+      if (compt1.typ /= 'i' and then compt1.typ /= 'd')
+        or else (i <= 0) or else (i = (compt1.all.number_of_con - 1))
+      then
+         case dirn is
+            when 1 =>
+               dirn := 8;
+            when 2 =>
+               dirn := 4;
+            when 4 =>
+               dirn := 2;
+            when 8 =>
+               dirn := 1;
+            when others =>
+               null;
+         end case;
+      end if;
+      --  case
+   end increment_pos;
+
+   function super_line (tcompt : compt) return Boolean is
+      --  * super line if a '!' is present in clines or tline *
+      Result_super_line : Boolean;
+      c_string : Unbounded_String;
+      long : Integer;
+   begin
+      Result_super_line := False;
+      c_string := tcompt.descript;
+      long := Length (c_string);
+      while long > 0
+      loop
+         if (Element (c_string, long) = '!') and then
+            (tcompt.typ = 'c' or else tcompt.typ = 't')
+         then
+            Result_super_line := True;
+         end if;
+         long := long - 1;
+      end loop;
+      return Result_super_line;
+   end super_line;
+
+   function goto_numeral (n : Integer; x : Unbounded_String) return Integer is
+      Result_goto_numeral : Integer;
+      long, i, j : Integer;
+      found : Boolean;
+      num1 : constant CharArray :=
+        ('?', '+', '-', '.', ',',
+         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+      num2 : constant CharArray :=
+        ('?', '-', '.', ',',
+         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+   begin
+      i := 0;
+      found := False;
+      Result_goto_numeral := 0;
+      j := 1;
+      long := Length (x);
+      if long > 0
+      then
+         loop
+            if Element (x, j) = '('
+            then
+               j := Index (x, "(");
+            end if;
+            if is_in (char (Element (x, j)), num1)
+            then
+               i := i + 1;
+               if i = n
+               then
+                  found := True;
+               else
+                  loop
+                     --  step over number to find next number
+                     --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
+                     j := j + 1;
+                     exit when not is_in (char (Element (x, j)), num2) or else
+                                         (j = long + 1);
+                  end loop;
+               end if;
+            else
+               j := j + 1;
+            end if;
+            exit when found or else (j = long + 1);
+         end loop;
+      end if;
+      if found
+      then
+         Result_goto_numeral := j;
+      else
+         bad_compt := True;
+         message (2) := To_Unbounded_String ("Number is missing");
+      end if;
+      return Result_goto_numeral;
+   end goto_numeral;
+
+   function Eng_Prefix (c : Character) return Long_Float is
+      Result_Eng_Prefix : Long_Float;
+   begin
+      case c is
+         when 'E' =>
+            Result_Eng_Prefix := 1.0e+18;
+         when 'P' =>
+            Result_Eng_Prefix := 1.0e+15;
+         when 'T' =>
+            Result_Eng_Prefix := 1.0e+12;
+         when 'G' =>
+            Result_Eng_Prefix := 1.0e+09;
+         when 'M' =>
+            Result_Eng_Prefix := 1.0e+06;
+         when 'k' =>
+            Result_Eng_Prefix := 1.0e+03;
+         when 'm' =>
+            Result_Eng_Prefix := 1.0e-03;
+         when Character (Mu) =>
+            Result_Eng_Prefix := 1.0e-06;
+         when 'n' =>
+            Result_Eng_Prefix := 1.0e-09;
+         when 'p' =>
+            Result_Eng_Prefix := 1.0e-12;
+         when 'f' =>
+            Result_Eng_Prefix := 1.0e-15;
+         when 'a' =>
+            Result_Eng_Prefix := 1.0e-18;
+         when others =>
+            Result_Eng_Prefix := 1.0;
+      end case;
+      --  case
+      return Result_Eng_Prefix;
+   end Eng_Prefix;
+
+   procedure Get_Param (tcompt       : compt;
+                        n            : Integer;
+                        value        : in out Long_Float;
+                        value_string : in out Unbounded_String;
+                        u1, prefix   : in out Character;
+                        alt_param    : in out Boolean) is
+      potential_units : constant CharArray :=
+        (Degree, Omega, 'm', 'h', 'H', 's', 'S', 'z', 'Z', 'y', 'Y');
+      potential_numbers : constant CharArray :=
+        ('+', '-', '.', ',',
+         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+      c_string, s_value : Unbounded_String;
+      i, j, long : Integer;
+      found_value : Boolean;
+   begin
+      alt_param := False;
+      c_string := tcompt.all.descript;
+      j := goto_numeral (n, c_string);
+      if bad_compt
+      then
+         ccompt := tcompt;
+         return;
+      end if;
+      long := Length (c_string);
+      while Element (c_string, long) = ' '
+      loop
+         long := long - 1;
+      end loop;
+      --  ignore end spaces
+      if j > 0
+      then
+         found_value := False;
+         s_value := To_Unbounded_String ("");
+         loop
+            if is_in (char (Element (c_string, j)), potential_numbers)
+            then
+               if not (Element (c_string, j) = '+')
+               then
+                  --  force a skip over '+' signs
+                  if Element (c_string, j) = ','
+                  then
+                     --  sub '.' for ','
+                     s_value := s_value & '.';
+                  else
+                     s_value := s_value & Element (c_string, j);
+                  end if;
+               end if;
+               --  '+' sign check
+               j := j + 1;
+            else
+               if Element (c_string, j) = '?'
+               then
+                  --  Check here for variable
+                  alt_param := True;
+                  j := j + 1;
+               else
+                  found_value := True;
+               end if;
+            end if;
+            exit when found_value or else (j = long + 1);
+         end loop;
+         --  Val (s_value, value, code);
+         s_value := To_Unbounded_String (Long_Float'Image (value));
+         --  if (code /= 0) or else (Length (s_value) = 0)
+         if Length (s_value) = 0
+         then
+            if alt_param
+            then
+               --  return these for uninitialized variables
+               value := 1.0;
+               value_string := To_Unbounded_String ("1.0");
+            else
+               ccompt := tcompt;
+               bad_compt := True;
+               message (2) := To_Unbounded_String ("Invalid number");
+               return;
+            end if;
+         else
+            value_string := s_value;
+         end if;
+      end if;
+      while (Element (c_string, j) = ' ') and then (j < long + 1)
+      loop
+         j := j + 1;
+      end loop;
+      --  Skip spaces
+      --  initialize prefix to blank
+      --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
+      prefix := ' ';
+      if is_in (char (Element (c_string, j)), Eng_Dec_Mux) and then (j <= long)
+      then
+         if Element (c_string, j) = 'm'
+         then
+            --  is 'm' a unit or prefix?
+            i := j + 1;
+            while (Element (c_string, i) = ' ') and then (i < long + 1)
+            loop
+               i := i + 1;
+            end loop;
+            --  * Skip spaces to check for some unit *
+            --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
+            if is_in (char (Element (c_string, i)), potential_units)
+            then
+               --  it's the prefix milli 'm' next to a unit
+               --  make j point past the prefix, to the unit
+               prefix := 'm';
+               value := Eng_Prefix ('m') * value;
+               j := i;
+            end if;
+            --  if 'm' is a unit do nothing
+            --  if other than 'm' factor in prefix
+            --  advance from prefix toward unit
+         else
+            prefix := Element (c_string, j);
+            value := Eng_Prefix (Element (c_string, j)) * value;
+            j := j + 1;
+         end if;
+      end if;
+      while (Element (c_string, j) = ' ') and then (j <= long)
+      loop
+         j := j + 1;
+      end loop;
+      --  Skip spaces
+      if j <= long
+      then
+         u1 := Element (c_string, j);
+      else
+         u1 := '?';
+      end if;
+      if u1 = 'm'
+      then
+         value := 1000.0 * value;
+      end if;
+      --  return millimeters, not meters
+   end Get_Param;
 
 end pfun1;
