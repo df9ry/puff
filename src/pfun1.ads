@@ -366,7 +366,10 @@ package pfun1 is
    function File_Exists_And_Open (file : in out Ada.Text_IO.File_Type;
                          fname : Unbounded_String) return Boolean;
 
+   procedure prp (vu : in out TComplex; vX, vY : TComplex);
    procedure co (co : in out TComplex; s, t : Long_Float);
+   procedure rc (rc : in out TComplex; z : TComplex);
+   procedure sm (sm : in out TComplex; s : Long_Float; t : TComplex);
 
    function kkk (x : Long_Float) return Long_Float;
 

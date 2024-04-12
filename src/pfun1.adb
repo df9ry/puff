@@ -347,14 +347,41 @@ package body pfun1 is
       Put (LR);
    end Make_Text_Border;
 
-   --  *
-   --  Create a complex number type.
-   --  *
+   procedure prp (vu : in out TComplex; vX, vY : TComplex) is
+   begin
+      vu.r := vX.r * vY.r - vX.i * vY.i;
+      vu.i := vX.r * vY.i + vX.i * vY.r;
+   end prp;
+
    procedure co (co : in out TComplex; s, t : Long_Float) is
    begin
       co.r := s;
       co.i := t;
    end co;
+
+   procedure rc (rc : in out TComplex; z : TComplex) is
+      --  ! was real, changed 10/15/90
+      --  !* check for 1/0 added here *
+      mag : Long_Float;
+   begin
+      mag := ((z.r) ** 2) + ((z.i) ** 2);
+      if mag = 0.0
+      then
+         --  Although this is equivalent to saying 1/0 = 0
+         --  it works properly for the few times it occurs
+         rc.r := 0.0;
+         rc.i := 0.0;
+      else
+         rc.r := z.r / mag;
+         rc.i := -z.i / mag;
+      end if;
+   end rc;
+
+   procedure sm (sm : in out TComplex; s : Long_Float; t : TComplex) is
+   begin
+      sm.r := s * t.r;
+      sm.i := s * t.i;
+   end sm;
 
    procedure beep is
    begin

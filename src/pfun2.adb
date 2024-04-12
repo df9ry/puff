@@ -135,13 +135,13 @@ package body pfun2 is
    procedure tlineO (tcompt : compt) is
       --  ,sh,ch
       --  were extended intermediate results
-      i, j : Integer;
+      j : Integer;
       c_ss : array (1 .. 2) of rg_pmc;
       rds : TComplex;
       unit1, prefix : Character;
       Manhat_on, alt_param : Boolean;
       zd, ere, value, alpha_tl, beta_l, elength, gamma, width,
-      wavelength, elength0 : Long_Float;
+      wavelength : Long_Float;
       value_str : Unbounded_String;
       sh, ch : TComplex;
    begin
@@ -168,6 +168,10 @@ package body pfun2 is
                return;
             end if;
             --  value_str not used here
+            value := 0.0;
+            unit1 := ' ';
+            prefix := ' ';
+            alt_param := False;
             Get_Param (tcompt, 1, value, value_str, unit1, prefix, alt_param);
             if bad_compt
             then
@@ -308,7 +312,7 @@ package body pfun2 is
             --  case
             --  save lngth factor in mm
             --  * Enable lossy and dispersive line (super_line) here *
-            elength0 := elength;
+            --  ??  elength0 := elength;
             if super_line (tcompt)
             then
                if stripline
@@ -426,18 +430,18 @@ package body pfun2 is
          loop
             for i in 1 .. 2
             loop
-               New_c (c_ss (i) (j));
+               c_ss (i) (j) := new TMemComplex;
             end loop;
          end loop;
          --  **********************************************
-         co (c_ss (2) (1).all.c, 2 * zd * ch.r + (((zd) ** 2) + 1.0) * sh.r,
-             2 * zd * ch.i + (((zd) ** 2) + 1.0) * sh.i);
+         co (c_ss (2) (1).all.c, 2.0 * zd * ch.r + (((zd) ** 2) + 1.0)
+             * sh.r, 2.0 * zd * ch.i + (((zd) ** 2) + 1.0) * sh.i);
          rc (rds, c_ss (2) (1).all.c);
          co (c_ss (2) (1).all.c, (((zd) ** 2) - 1.0) * sh.r,
-             (((zd) ** 2) - 1.0) * sh.i);
+             (((zd) ** 2.0) - 1.0) * sh.i);
          prp (c_ss (1) (1).all.c, c_ss (2) (1).all.c, rds);
          co (c_ss (2) (2).all.c, c_ss (1) (1).all.c.r, c_ss (1) (1).all.c.i);
-         sm (c_ss (1) (2).all.c, 2 * zd, rds);
+         sm (c_ss (1) (2).all.c, 2.0 * zd, rds);
          co (c_ss (2) (1).all.c, c_ss (1) (2).all.c.r, c_ss (1) (2).all.c.i);
          c_s := null;
          for j in 1 .. 2
@@ -446,10 +450,10 @@ package body pfun2 is
             loop
                if c_s = null
                then
-                  new_s (tcompt.all.s_begin);
+                  tcompt.all.s_begin := new s_parameter_record;
                   c_s := tcompt.all.s_begin;
                else
-                  new_s (c_s.all.next_s);
+                  c_s.all.next_s := new s_parameter_record;
                   c_s := c_s.all.next_s;
                end if;
                c_s.all.next_s := null;
@@ -466,7 +470,7 @@ package body pfun2 is
    procedure qline (tcompt : compt) is
       --  ,sh,ch
       --  were extended intermediate results
-      i, j, des_lngth : Integer;
+      j, des_lngth : Integer;
       rds : TComplex;
       c_ss : array (1 .. 2) of rg_pmc;
       unit1, prefix : Character;
@@ -479,7 +483,7 @@ package body pfun2 is
       then
          --  [P2Ada]: WITH instruction
          --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_16.' to fields
-         declare P2Ada_Var_16 : compt renames tcompt.all;
+         declare P2Ada_Var_16 : compt_record renames tcompt.all;
          begin
             --  default attenuation factors nepers/mm
             --  initialize
@@ -493,61 +497,67 @@ package body pfun2 is
             if Index (P2Ada_Var_16.descript, "!") > 0
             then
                bad_compt := True;
-               message (1) := "qline! is";
-               message (2) := "an invalid";
-               message (3) := "part";
+               message (1) := To_Unbounded_String ("qline! is");
+               message (2) := To_Unbounded_String ("an invalid");
+               message (3) := To_Unbounded_String ("part");
                return;
             end if;
             --  value_str not used here
+            value := 0.0;
+            unit1 := ' ';
+            prefix := ' ';
+            alt_param := False;
             Get_Param (tcompt, 1, value, value_str, unit1, prefix, alt_param);
             if bad_compt
             then
                return;
             end if;
-            if alt_param
-            then
-               x_sweep.init_element (tcompt, 'z', prefix, unit1);
-            end if;
+--  ??              if alt_param
+--  ??              then
+--  ??                 x_sweep.init_element (tcompt, 'z', prefix, unit1);
+--  ??              end if;
             if bad_compt
             then
                return;
             end if;
             case unit1 is
-               when Omega =>
-                  zed := value;
+               when Character (Omega) =>
+                  P2Ada_Var_16.zed := value;
                when 's' | 'S' =>
-                  zed := 1.0 / value;
+                  P2Ada_Var_16.zed := 1.0 / value;
                when 'z' | 'Z' =>
-                  zed := Z0 * value;
+                  P2Ada_Var_16.zed := Z0 * value;
                when 'y' | 'Y' =>
-                  zed := Z0 / value;
+                  P2Ada_Var_16.zed := Z0 / value;
                when others =>
                   begin
                      bad_compt := True;
-                     message (1) := "Invalid qline";
-                     message (2) := "impedance unit";
-                     message (3) := "Use y, z, S or " + Omega;
+                     message (1) := To_Unbounded_String ("Invalid qline");
+                     message (2) := To_Unbounded_String ("impedance unit");
+                     message (3) := To_Unbounded_String ("Use y, z, S or " &
+                                                           Character (Omega));
                      return;
                   end;
                   --  else
             end case;
             --  case
-            if not (Manhat_on) and then (zed <= 0.0)
+            if not (Manhat_on) and then (P2Ada_Var_16.zed <= 0.0)
             then
                --  OK if alt_param
                bad_compt := True;
-               message (1) := "Negative";
-               message (2) := "or zero qline";
-               message (2) := "impedance";
+               message (1) := To_Unbounded_String ("Negative");
+               message (2) := To_Unbounded_String ("or zero qline");
+               message (2) := To_Unbounded_String ("impedance");
                return;
             end if;
             --  Get_Param will return 1.0 for zed if alt_param and no number
             --  given
-            if (alt_param and then (value_str = "1.0")) or else (zed <= 0.0)
+            if (alt_param and then (value_str = "1.0")) or else
+              (P2Ada_Var_16.zed <= 0.0)
             then
-               width := widthZ0;
+               P2Ada_Var_16.width := widthZ0;
             else
-               width := widtht (zed);
+               P2Ada_Var_16.width := widtht (P2Ada_Var_16.zed);
             end if;
             --  width is always needed for ere calculation
             if bad_compt
@@ -556,20 +566,20 @@ package body pfun2 is
             end if;
             if not (Manhat_on)
             then
-               if width < resln
+               if P2Ada_Var_16.width < resln
                then
                   bad_compt := True;
-                  message (1) := "Impedance too big";
-                  message (2) := "qline too narrow";
-                  message (3) := "(<" + sresln + ')';
+                  message (1) := To_Unbounded_String ("Impedance too big");
+                  message (2) := To_Unbounded_String ("qline too narrow");
+                  message (3) := To_Unbounded_String ("(<" & sresln & ')');
                   return;
                end if;
-               if width > bmax
+               if P2Ada_Var_16.width > bmax
                then
                   bad_compt := True;
-                  message (1) := "Impedance is";
-                  message (2) := "too small:";
-                  message (3) := "qline too wide";
+                  message (1) := To_Unbounded_String ("Impedance is");
+                  message (2) := To_Unbounded_String ("too small:");
+                  message (3) := To_Unbounded_String ("qline too wide");
                   return;
                end if;
             end if;
@@ -579,8 +589,8 @@ package body pfun2 is
                --  ere calculation is a function of width!
                ere := er;
             else
-               ere := (er + 1) / 2 + (er - 1) / 2 /
-                 sqrt (1 + 10 * substrate_h / width);
+               ere := (er + 1.0) / 2.0 + (er - 1.0) / 2.0 /
+                 Sqrt (1.0 + 10.0 * substrate_h / P2Ada_Var_16.width);
             end if;
             --  value_str not used here
             Get_Param (tcompt, 2, value, value_str, unit1, prefix, alt_param);
@@ -588,29 +598,33 @@ package body pfun2 is
             then
                return;
             end if;
-            if alt_param
-            then
-               x_sweep.init_element (tcompt, 'l', prefix, unit1);
-            end if;
+--  ??              if alt_param
+--  ??              then
+--  ??                 x_sweep.init_element (tcompt, 'l', prefix, unit1);
+--  ??              end if;
             if bad_compt
             then
                return;
             end if;
             case unit1 is
-               when degree =>
-                  wavelength := value / 360.0;
-                  lngth := Lambda_fd * wavelength / sqrt (ere);
+               when Character (Degree) =>
+                  P2Ada_Var_16.wavelength := value / 360.0;
+                  P2Ada_Var_16.lngth := Lambda_fd * P2Ada_Var_16.wavelength /
+                    Sqrt (ere);
                when 'm' =>
                   --  mmlong
-                  lngth := value;
-                  wavelength := lngth * sqrt (ere) / Lambda_fd;
-                  if alt_param
-                  then
-                     x_sweep.Load_Prop_Const (sqrt (ere) / lambda_fd, 0.0);
-                  end if;
+                  P2Ada_Var_16.lngth := value;
+                  P2Ada_Var_16.wavelength := P2Ada_Var_16.lngth *
+                    Sqrt (ere) / Lambda_fd;
+--  ??                  if alt_param
+--  ??                  then
+--  ??                     x_sweep.Load_Prop_Const (sqrt (ere) / lambda_fd,
+--  ??                     0.0P2Ada_Var_16.P2Ada_Var_16.P2Ada_Var_16.);
+--  ??                  end if;
                when 'h' | 'H' =>
-                  lngth := value * substrate_h;
-                  wavelength := lngth * sqrt (ere) / Lambda_fd;
+                  P2Ada_Var_16.lngth := value * substrate_h;
+                  P2Ada_Var_16.wavelength := P2Ada_Var_16.lngth * Sqrt (ere) /
+                    Lambda_fd;
                   if alt_param
                   then
                      x_sweep.Load_Prop_Const (substrate_h * Sqrt (ere) /
@@ -619,22 +633,23 @@ package body pfun2 is
                when others =>
                   begin
                      bad_compt := True;
-                     message (1) := "Invalid qline";
-                     message (2) := "length unit";
-                     message (3) := "Use mm, h or " + Degree;
+                     message (1) := To_Unbounded_String ("Invalid qline");
+                     message (2) := To_Unbounded_String ("length unit");
+                     message (3) := To_Unbounded_String ("Use mm, h or " &
+                                                           Character (Degree));
                      return;
                   end;
             end case;
             --  case
             --  save lngth factor in mm
-            lngth0 := lngth;
+            P2Ada_Var_16.lngth0 := P2Ada_Var_16.lngth;
             if Manhat_on
             then
                --  Artwork correction and Manh_width after ere calculation
-               width := Manh_width;
-               lngth := Manh_length;
+               P2Ada_Var_16.width := Manh_width;
+               P2Ada_Var_16.lngth := Manh_length;
             else
-               width := width + artwork_cor;
+               P2Ada_Var_16.width := P2Ada_Var_16.width + artwork_cor;
             end if;
             --  * Check for Q factor *
             j := goto_numeral (3, tcompt.all.descript);
@@ -650,65 +665,67 @@ package body pfun2 is
                --  value_str, prefix not used here, unit1 should be 'Q'
                Get_Param (tcompt, 3, value, value_str, unit1, prefix,
                           alt_param);
-               if alt_param
-               then
-                  x_sweep.init_element (tcompt, 'Q', prefix, 'Q');
-               end if;
+ --  ??              if alt_param
+ --  ??              then
+ --  ??                 x_sweep.init_element (tcompt, 'Q', prefix, 'Q');
+ --  ??              end if;
                if bad_compt
                then
                   return;
                end if;
                --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
-               if unit1 and (degree | 'm' | 'h' | 'H' => True,
-                              others => False)
+               if unit1 = Character (Degree) or else unit1 = 'm' or else
+                  unit1 = 'h' or else unit1 = 'H'
                then
                   bad_compt := True;
-                  message (1) := "Corrections";
-                  message (2) := "not allowed for";
-                  message (3) := "qline length";
+                  message (1) := To_Unbounded_String ("Corrections");
+                  message (2) := To_Unbounded_String ("not allowed for");
+                  message (3) := To_Unbounded_String ("qline length");
                   return;
                end if;
                --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
-               if (value = 0.0) or else not (unit1 and ('q' | 'Q' => True,
-                                                        others => False))
+               if (value = 0.0) or else not (unit1 = 'q' or else unit1 = 'Q')
                then
                   bad_compt := True;
-                  message (1) := "Invalid or zero";
-                  message (2) := "Q factor";
+                  message (1) := To_Unbounded_String ("Invalid or zero");
+                  message (2) := To_Unbounded_String ("Q factor");
                   return;
                end if;
-               des_lngth := (descript'Length);
+               des_lngth := Length (P2Ada_Var_16.descript);
                loop
                   --  Find location of 'Q'
                   j := j + 1;
-                  exit when (descript (j) = unit1) or else (j > des_lngth);
+                  exit when (Element (P2Ada_Var_16.descript, j) = unit1)
+                    or else (j > des_lngth);
                end loop;
                loop
                   --  Skip spaces to
                   --  find 'd' or 'c' after Q
                   j := j + 1;
-                  exit when (descript (j) /= ' ') or else (j > des_lngth);
+                  exit when (Element (P2Ada_Var_16.descript, j) /= ' ')
+                    or else (j > des_lngth);
                end loop;
-               if lngth0 /= 0.0
+               if P2Ada_Var_16.lngth0 /= 0.0
                then
                   --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
-                  alpha_co := (Pi * wavelength) / (value * lngth0);
-                  if (j <= des_lngth) and then (descript (j) and
-                                                  ('C' | 'c' => True,
-                                                   others => False))
+                  P2Ada_Var_16.alpha_co := (Pi * P2Ada_Var_16.wavelength) /
+                    (value * P2Ada_Var_16.lngth0);
+                  if (j <= des_lngth) and then
+                    (P2Ada_Var_16.descript = "C" or else
+                        P2Ada_Var_16.descript = "c")
                   then
                      --  default to dielectric loss
-                     alpha_c := alpha_co;
+                     P2Ada_Var_16.alpha_c := P2Ada_Var_16.alpha_co;
                   else
-                     alpha_d := alpha_co;
+                     P2Ada_Var_16.alpha_d := P2Ada_Var_16.alpha_co;
                   end if;
                   --  reset to 0
-                  alpha_co := 0.0;
+                  P2Ada_Var_16.alpha_co := 0.0;
                end if;
             end if;
             --  if j > 0
-            con_space := 0.0;
-            number_of_con := 2;
+            P2Ada_Var_16.con_space := 0.0;
+            P2Ada_Var_16.number_of_con := 2;
          end;
          --  [P2Ada]: end of WITH
          --  with tcompt^ do
@@ -718,34 +735,34 @@ package body pfun2 is
          --  ! Warning, these alphas get huge for small Q's
       else
          gamma := freq / design_freq;
-         elength := 2 * Pi * tcompt.all.wavelength;
+         elength := 2.0 * Pi * tcompt.all.wavelength;
          alpha_tl := (tcompt.all.alpha_d * gamma + tcompt.all.alpha_c *
                         Sqrt (gamma)) * tcompt.all.lngth0;
          if alpha_tl > 80.0
          then
-            alpha_tl := 80;
+            alpha_tl := 80.0;
          end if;
          beta_l := elength * gamma;
-         sh.r := sinh (alpha_tl) * cos (beta_l);
-         sh.i := cosh (alpha_tl) * sin (beta_l);
-         ch.r := cosh (alpha_tl) * cos (beta_l);
-         ch.i := sinh (alpha_tl) * sin (beta_l);
-         zd := tcompt.all.zed / z0;
+         sh.r := Sinh (alpha_tl) * Cos (beta_l);
+         sh.i := Cosh (alpha_tl) * Sin (beta_l);
+         ch.r := Cosh (alpha_tl) * Cos (beta_l);
+         ch.i := Sinh (alpha_tl) * Sin (beta_l);
+         zd := tcompt.all.zed / Z0;
          for i in 1 .. 2
          loop
             for j in 1 .. 2
             loop
-               New_c (c_ss (i) (j));
+               c_ss (i) (j) := new TMemComplex;
             end loop;
          end loop;
-         co (c_ss (1) (1).all.c, 2 * zd * ch.r + (((zd) ** 2) + 1.0) * sh.r,
-             2 * zd * ch.i + (((zd) ** 2) + 1.0) * sh.i);
+         co (c_ss (1) (1).all.c, 2.0 * zd * ch.r + (((zd) ** 2) + 1.0) * sh.r,
+             2.0 * zd * ch.i + (((zd) ** 2) + 1.0) * sh.i);
          rc (rds, c_ss (1) (1).all.c);
          co (c_ss (2) (1).all.c, (((zd) ** 2) - 1.0) * sh.r,
              (((zd) ** 2) - 1.0) * sh.i);
          prp (c_ss (1) (1).all.c, c_ss (2) (1).all.c, rds);
          co (c_ss (2) (2).all.c, c_ss (1) (1).all.c.r, c_ss (1) (1).all.c.i);
-         sm (c_ss (1) (2).all.c, 2 * zd, rds);
+         sm (c_ss (1) (2).all.c, 2.0 * zd, rds);
          co (c_ss (2) (1).all.c, c_ss (1) (2).all.c.r, c_ss (1) (2).all.c.i);
          c_s := null;
          for j in 1 .. 2
@@ -754,10 +771,10 @@ package body pfun2 is
             loop
                if c_s = null
                then
-                  new_s (tcompt.all.s_begin);
+                  tcompt.all.s_begin := new s_parameter_record;
                   c_s := tcompt.all.s_begin;
                else
-                  new_s (c_s.all.next_s);
+                  c_s.all.next_s := new s_parameter_record;
                   c_s := c_s.all.next_s;
                end if;
                c_s.all.next_s := null;
@@ -782,13 +799,13 @@ package body pfun2 is
       zt, ere, eree, ereo : Long_Float;
       sh, ch : TComplex;
       check_correction_three, Manhat_on, alt_param : Boolean;
-      value_str : line_string;
+      value_str : Unbounded_String;
    begin
       if action
       then
          --  [P2Ada]: WITH instruction
          --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_17.' to fields
-         declare P2Ada_Var_17 : compt renames tcompt.all;
+         declare P2Ada_Var_17 : compt_record renames tcompt.all;
          begin
             --  * an 'M' at the end of ^.descript? *
             Manhat_on := Manhattan (tcompt);
@@ -796,30 +813,32 @@ package body pfun2 is
             then
                return;
             end if;
-            if (Pos ('?', descript) > 0) and then super_line (tcompt)
+            if (Index (P2Ada_Var_17.descript, "?") > 0)
+              and then super_line (tcompt)
             then
                bad_compt := True;
-               message (1) := "Combined";
-               message (2) := "? and !";
-               message (3) := "disallowed";
+               message (1) := To_Unbounded_String ("Combined");
+               message (2) := To_Unbounded_String ("? and !");
+               message (3) := To_Unbounded_String ("disallowed");
                return;
             end if;
             --  default attenuation factors nepers/mm
-            alpha_c := 0.0;
-            alpha_d := 0.0;
-            alpha_co := 0.0;
-            alpha_do := 0.0;
-            super := false;
-            number_of_con := 4;
+            P2Ada_Var_17.alpha_c := 0.0;
+            P2Ada_Var_17.alpha_d := 0.0;
+            P2Ada_Var_17.alpha_co := 0.0;
+            P2Ada_Var_17.alpha_do := 0.0;
+            P2Ada_Var_17.super := False;
+            P2Ada_Var_17.number_of_con := 4;
             z_index := 0;
-            zed := 0;
-            zedo := 0;
-            wavelength := 0;
-            lngth := 0;
+            P2Ada_Var_17.zed := 0.0;
+            P2Ada_Var_17.zedo := 0.0;
+            P2Ada_Var_17.wavelength := 0.0;
+            P2Ada_Var_17.lngth := 0.0;
             check_correction_three := False;
             for i in 1 .. 3
             loop
-               if (lngth = 0) and then (wavelength = 0)
+               if (P2Ada_Var_17.lngth = 0.0)
+                 and then (P2Ada_Var_17.wavelength = 0.0)
                then
                   j := goto_numeral (i, tcompt.all.descript);
                   bad_compt := False;
@@ -837,31 +856,37 @@ package body pfun2 is
                         --  init sweep object
                         --  [P2Ada]: "x in y" -> "x and y" redefine "and"
                         --  before
-                        if unit1 and (omega | 's' | 'S' | 'z' | 'Z' | 'y' |
-                                      'Y' => True, others => False)
+                        if unit1 = Character (Omega)
+                          or else unit1 = 's'
+                          or else unit1 = 'S'
+                          or else unit1 = 'z'
+                          or else unit1 = 'Z'
+                          or else unit1 = 'y'
                         then
-                           if zed = 0
+                           if P2Ada_Var_17.zed = 0.0
                            then
                               --  variable is the 1st z
                               --  variable is the 2nd z
-                              x_sweep.init_element (tcompt, 'z', prefix,
-                                                    unit1);
+--  ??                              x_sweep.init_element (tcompt, 'z', prefix,
+--  ??                                                    unit1);
                               z_index := 1;
                            else
-                              x_sweep.init_element (tcompt, 'z', prefix,
-                                                    unit1);
+--  ??                              x_sweep.init_element (tcompt, 'z', prefix,
+--  ??                                                    unit1);
                               z_index := 2;
                            end if;
                            --  [P2Ada]: "x in y" -> "x and y" redefine "and"
                            --  before
                         else
-                           if unit1 and (degree | 'm' | 'h' | 'H' => True,
-                                          others => False)
+                           if unit1 = Character (Degree)
+                             or else unit1 = 'm'
+                             or else unit1 = 'h'
+                             or else unit1 = 'H'
                            then
                               --  if length units
                               --  variable is length
-                              x_sweep.init_element (tcompt, 'l', prefix,
-                                                    unit1);
+--  ??                              x_sweep.init_element (tcompt, 'l', prefix,
+--  ??                                                    unit1);
                               z_index := 5;
                            end if;
                         end if;
@@ -873,39 +898,39 @@ package body pfun2 is
                      end if;
                      --  Read in first impedance as zed, second as zedo
                      case unit1 is
-                        when omega =>
-                           if zed = 0
+                        when Character (Omega) =>
+                           if P2Ada_Var_17.zed = 0.0
                            then
-                              zed := value;
+                              P2Ada_Var_17.zed := value;
                            else
-                              zedo := value;
+                              P2Ada_Var_17.zedo := value;
                            end if;
                         when 's' | 'S' =>
-                           if zed = 0
+                           if P2Ada_Var_17.zed = 0.0
                            then
-                              zed := 1.0 / value;
+                              P2Ada_Var_17.zed := 1.0 / value;
                            else
-                              zedo := 1.0 / value;
+                              P2Ada_Var_17.zedo := 1.0 / value;
                            end if;
                         when 'z' | 'Z' =>
-                           if zed = 0
+                           if P2Ada_Var_17.zed = 0.0
                            then
-                              zed := Z0 * value;
+                              P2Ada_Var_17.zed := Z0 * value;
                            else
-                              zedo := Z0 * value;
+                              P2Ada_Var_17.zedo := Z0 * value;
                            end if;
                         when 'y' | 'Y' =>
-                           if zed = 0
+                           if P2Ada_Var_17.zed = 0.0
                            then
-                              zed := Z0 / value;
+                              P2Ada_Var_17.zed := Z0 / value;
                            else
-                              zedo := Z0 / value;
+                              P2Ada_Var_17.zedo := Z0 / value;
                            end if;
-                        when degree =>
-                           wavelength := value / 360.0;
+                        when Character (Degree) =>
+                           P2Ada_Var_17.wavelength := value / 360.0;
                         when 'm' =>
                            --  mmlong
-                           lngth := value;
+                           P2Ada_Var_17.lngth := value;
                            if z_index = 5
                            then
                               z_index := 6;
@@ -913,7 +938,7 @@ package body pfun2 is
                            --  var in meters
                         when 'h' | 'H' =>
                            --  mmlong
-                           lngth := value * substrate_h;
+                           P2Ada_Var_17.lngth := value * substrate_h;
                            if z_index = 5
                            then
                               z_index := 7;
@@ -922,17 +947,22 @@ package body pfun2 is
                         when others =>
                            begin
                               bad_compt := True;
-                              message (1) := "Missing clines";
-                              message (2) := "unit. Use y, z";
-                              message (3) := "S, " + Omega + ", mm, h or " +
-                                Degree;
+                              message (1) :=
+                                To_Unbounded_String ("Missing clines");
+                              message (2) :=
+                                To_Unbounded_String ("unit. Use y, z");
+                              message (3) :=
+                                To_Unbounded_String ("S, " & Character (Omega)
+                                                       & ", mm, h or " &
+                                                       Character (Degree));
                               return;
                            end;
                      end case;
                      --  case
                   end if;
                   --  (j > 0) or (i < 3)
-                  if (i = 2) and then ((wavelength /= 0) or else (lngth /= 0))
+                  if (i = 2) and then ((P2Ada_Var_17.wavelength /= 0.0)
+                                       or else (P2Ada_Var_17.lngth /= 0.0))
                   then
                      check_correction_three := True;
                   end if;
@@ -945,19 +975,19 @@ package body pfun2 is
             then
                i := 4;
             end if;
-            if (zed = 0) and then (zedo = 0)
+            if (P2Ada_Var_17.zed = 0.0) and then (P2Ada_Var_17.zedo = 0.0)
             then
                --  if zed=0 then zed:=sqr(Z0)/zedo;
                bad_compt := True;
-               message (1) := "Both cline even";
-               message (2) := "& odd impedances";
-               message (3) := "not found or zero";
+               message (1) := To_Unbounded_String ("Both cline even");
+               message (2) := To_Unbounded_String ("& odd impedances");
+               message (3) := To_Unbounded_String ("not found or zero");
                return;
             else
-               if zedo = 0
+               if P2Ada_Var_17.zedo = 0.0
                then
                   --  calculate zedo if blank
-                  zedo := ((Z0) ** 2) / zed;
+                  P2Ada_Var_17.zedo := ((Z0) ** 2) / P2Ada_Var_17.zed;
                else
                   if z_index = 1
                   then
@@ -972,12 +1002,12 @@ package body pfun2 is
                end if;
                --  both given, odd is var
             end if;
-            if zed < zedo
+            if P2Ada_Var_17.zed < P2Ada_Var_17.zedo
             then
                --  swap even and odd impedances
-               zt := zed;
-               zed := zedo;
-               zedo := zt;
+               zt := P2Ada_Var_17.zed;
+               P2Ada_Var_17.zed := P2Ada_Var_17.zedo;
+               P2Ada_Var_17.zedo := zt;
                case z_index is
                   when 1 =>
                      --  single given, odd mode is variable
@@ -997,12 +1027,12 @@ package body pfun2 is
                end case;
                --  case
             end if;
-            if (zed <= 0) or else (zedo <= 0)
+            if (P2Ada_Var_17.zed <= 0.0) or else (P2Ada_Var_17.zedo <= 0.0)
             then
                bad_compt := True;
-               message (1) := "cline";
-               message (2) := "impedances must";
-               message (3) := "be positive";
+               message (1) := To_Unbounded_String ("cline");
+               message (2) := To_Unbounded_String ("impedances must");
+               message (3) := To_Unbounded_String ("be positive");
                return;
             end if;
             --  Load index's 1..4 for alt parameter sweep
@@ -1013,14 +1043,14 @@ package body pfun2 is
             --  * All dimensions must be calculated, even for Manhattan,
             --  to guarantee that electrical lengths are the same be it
             --  regular or Manhattan *
-            if zed * 0.97 < zedo
+            if P2Ada_Var_17.zed * 0.97 < P2Ada_Var_17.zedo
             then
                --  !* this factor was 0.98 in 1.0 *
                --  !* changed to avoid w_s_micro errors*
                bad_compt := True;
-               message (1) := "cline even & odd";
-               message (2) := "impedances are";
-               message (3) := "too close";
+               message (1) := To_Unbounded_String ("cline even & odd");
+               message (2) := To_Unbounded_String ("impedances are");
+               message (3) := To_Unbounded_String ("too close");
                return;
             end if;
             if not (bad_compt)
@@ -1045,17 +1075,20 @@ package body pfun2 is
                   if (con_space < resln) and then not (Manhat_on)
                   then
                      bad_compt := True;
-                     message (1) := "clines spacing is";
-                     message (2) := '<' + sresln;
-                     message (3) := Omega + "e/" + Omega + "o is too big";
+                     message (1) := To_Unbounded_String ("clines spacing is");
+                     message (2) := To_Unbounded_String ('<' & sresln);
+                     message (3) :=
+                       To_Unboundes_String (Character (Omega) & "e/"
+                                            & Character (Omega)
+                                            & "o is too big");
                      return;
                   end if;
                   if (width < resln) and then not (Manhat_on)
                   then
                      bad_compt := True;
-                     message (1) := "Even impedance is";
-                     message (2) := "too large. Width";
-                     message (3) := '<' + sresln;
+                     message (1) := To_Unbounded_String ("Even impedance is");
+                     message (2) := To_Unbounded_String ("too large. Width");
+                     message (3) := To_Unbounded_String ('<' & sresln);
                      return;
                   end if;
                   if stripline
@@ -1071,9 +1104,10 @@ package body pfun2 is
                   if (lngth = 0) and then (wavelength = 0)
                   then
                      bad_compt := True;
-                     message (1) := "Missing cline";
-                     message (2) := "length. Supply";
-                     message (3) := "length in mm or " + Degree;
+                     message (1) := To_Unbounded_String ("Missing cline");
+                     message (2) := To_Unbounded_String ("length. Supply");
+                     message (3) := To_Unbounded_String ("length in mm or "
+                                                         & Character (Degree));
                      return;
                   else
                      if lngth = 0
@@ -1087,15 +1121,15 @@ package body pfun2 is
                      case z_index is
                         when 5 =>
                            x_sweep.Load_Prop_Const (Sqrt (eree) /
-                                                      sqrt (ere), sqrt (ereo) /
+                                                      Sqrt (ere), Sqrt (ereo) /
                                                       Sqrt (ere));
                         when 6 =>
                            x_sweep.Load_Prop_Const (Sqrt (eree) /
-                                                      lambda_fd, sqrt (ereo) /
+                                                      lambda_fd, Sqrt (ereo) /
                                                       Lambda_fd);
                         when 7 =>
                            x_sweep.Load_Prop_Const (substrate_h *
-                                                      sqrt (eree) / lambda_fd,
+                                                      Sqrt (eree) / lambda_fd,
                                                     substrate_h * Sqrt (ereo) /
                                                       Lambda_fd);
                         when others =>
@@ -1131,7 +1165,7 @@ package body pfun2 is
                            return;
                         end if;
                         case unit1 is
-                           when Degree =>
+                           when Character (Degree) =>
                               lngth := lngth + Lambda_fd * (value / 360.0) /
                                 sqrt (ere);
                            when 'h' | 'H' =>
@@ -1141,9 +1175,12 @@ package body pfun2 is
                            when others =>
                               begin
                                  bad_compt := True;
-                                 message (1) := "Improper units";
-                                 message (2) := "used in length";
-                                 message (3) := " correction   ";
+                                 message (1) :=
+                                   To_Unbounded_String ("Improper units");
+                                 message (2) :=
+                                   To_Unbounded_String ("used in length");
+                                 message (3) :=
+                                   To_Unbounded_String (" correction   ");
                                  return;
                               end;
                         end case;
@@ -1155,8 +1192,8 @@ package body pfun2 is
                   if (lngth < 0) and then not (Manhat_on)
                   then
                      bad_compt := True;
-                     message (1) := "Negative";
-                     message (2) := "cline length";
+                     message (1) := To_Unbounded_String ("Negative");
+                     message (2) := To_Unbounded_String ("cline length");
                      return;
                   end if;
                end if;
@@ -1165,9 +1202,9 @@ package body pfun2 is
             --  if not_bad
             if bad_compt and then (z_index > 0)
             then
-               message (1) := "Add or alter";
-               message (2) := "best-guess";
-               message (3) := "values";
+               message (1) := To_Unbounded_String ("Add or alter");
+               message (2) := To_Unbounded_String ("best-guess");
+               message (3) := To_Unbounded_String ("values");
             end if;
             if Manhat_on
             then
@@ -1197,22 +1234,22 @@ package body pfun2 is
                zd := tcompt.all.zed / Z0;
                elength := 2 * Pi * tcompt.all.wavelength;
                alpha_tl := (tcompt.all.alpha_d * gamma +
-                              Rough_alpha (tcompt.all.alpha_c) * sqrt (gamma))
+                              Rough_alpha (tcompt.all.alpha_c) * Sqrt (gamma))
                  * tcompt.all.lngth0;
             else
                zd := tcompt.all.zedo / Z0;
                elength := 2 * Pi * tcompt.all.wavelengtho;
                alpha_tl := (tcompt.all.alpha_do * gamma +
-                              Rough_alpha (tcompt.all.alpha_co) * sqrt (gamma))
+                              Rough_alpha (tcompt.all.alpha_co) * Sqrt (gamma))
                  * tcompt.all.lngth0;
             end if;
             beta_l := elength * gamma;
-            sh.r := sinh (alpha_tl) * cos (beta_l);
-            sh.i := cosh (alpha_tl) * sin (beta_l);
-            ch.r := cosh (alpha_tl) * cos (beta_l);
-            ch.i := sinh (alpha_tl) * sin (beta_l);
-            co (seo (i) (1) (1), 2 * zd * ch.r + (((zd) ** 2) + 1.0) *
-                  sh.r, 2 * zd * ch.i + (((zd) ** 2) + 1.0) * sh.i);
+            sh.r := Sinh (alpha_tl) * Cos (beta_l);
+            sh.i := Cosh (alpha_tl) * Sin (beta_l);
+            ch.r := Cosh (alpha_tl) * Cos (beta_l);
+            ch.i := Sinh (alpha_tl) * Sin (beta_l);
+            co (seo (i) (1) (1), 2.0 * zd * ch.r + (((zd) ** 2) + 1.0) *
+                  sh.r, 2.0 * zd * ch.i + (((zd) ** 2) + 1.0) * sh.i);
             rc (rds, seo (i) (1) (1));
             co (seo (i) (1) (2), 0.5 * (((zd) ** 2) - 1.0) * sh.r, 0.5 *
                 (((zd) ** 2) - 1.0) * sh.i);
@@ -1302,18 +1339,18 @@ package body pfun2 is
                if j /= 1
                then
                   bad_compt := True;
-                  message (1) := "One parameter";
-                  message (2) := "only for";
-                  message (3) := "swept lumped";
+                  message (1) := To_Unbounded_String ("One parameter");
+                  message (2) := To_Unbounded_String ("only for");
+                  message (3) := To_Unbounded_String ("swept lumped");
                else
                   if parallel_cir
                   then
                      --  j=1, value[1..3]
                      --  index of non-zero value
                      bad_compt := True;
-                     message (1) := "Parallel circuit";
-                     message (2) := "not allowed for";
-                     message (3) := "swept lumped";
+                     message (1) := To_Unbounded_String ("Parallel circuit");
+                     message (2) := To_Unbounded_String ("not allowed for");
+                     message (3) := To_Unbounded_String ("swept lumped");
                   else
                      i := 0;
                      loop
@@ -1345,7 +1382,7 @@ package body pfun2 is
                width := 0;
             end if;
             case unit1 is
-               when omega =>
+               when Character (Omega) =>
                   zed := value (1) / Z0;
                   zedo := value (2) / Z0;
                   wavelength := value (3) / Z0;
@@ -1377,9 +1414,9 @@ package body pfun2 is
             if lngth <= resln
             then
                bad_compt := True;
-               message (1) := "lumped length";
-               message (2) := "must be in m";
-               message (3) := '>' + sresln;
+               message (1) := To_Unbounded_String ("lumped length");
+               message (2) := To_Unbounded_String ("must be in m");
+               message (3) := To_Unbounded_String ('>' & sresln);
             end if;
          end;
          --  [P2Ada]: end of WITH
@@ -1461,7 +1498,7 @@ package body pfun2 is
       denom, turns_ratio, S11, S21 : Long_Float;
       i : Integer;
       unit1, prefix : Character;
-      value_string : line_string;
+      value_string : Unbounded_String;
       alt_param : Boolean;
    begin
       if action
@@ -1484,15 +1521,15 @@ package body pfun2 is
             then
                --  ! no prefixes for unitless numbers
                bad_compt := True;
-               message (1) := "No prefixes";
-               message (2) := "allowed for";
-               message (3) := "transformer";
+               message (1) := To_Unbounded_String ("No prefixes");
+               message (2) := To_Unbounded_String ("allowed for");
+               message (3) := To_Unbounded_String ("transformer");
                return;
             end if;
-            if alt_param
-            then
-               x_sweep.init_element (tcompt, 't', prefix, unit1);
-            end if;
+--  ??            if alt_param
+--  ??            then
+--  ??               x_sweep.init_element (tcompt, 't', prefix, unit1);
+--  ??            end if;
             if bad_compt
             then
                return;
@@ -1578,31 +1615,33 @@ package body pfun2 is
             if prefix /= ' '
             then
                bad_compt := True;
-               message (1) := "No prefixes";
-               message (2) := "allowed for";
-               message (3) := "attenuator";
+               message (1) := To_Unbounded_String ("No prefixes");
+               message (2) := To_Unbounded_String ("allowed for");
+               message (3) := To_Unbounded_String ("attenuator");
                return;
             end if;
             --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
-            if not (unit1 and ('d' | 'D' | '?' => True, others => False))
+            if not (unit1 = 'd'
+                    or else unit1 = 'D'
+                    or else unit1 = '?'
             then
                bad_compt := True;
-               message (1) := "Enter";
-               message (2) := "attenuation";
-               message (3) := "in dB";
+               message (1) := To_Unbounded_String ("Enter");
+               message (2) := To_Unbounded_String ("attenuation");
+               message (3) := To_Unbounded_String ("in dB");
                return;
             end if;
-            if abs (value) > 99
+            if abs (value) > 99.0
             then
                bad_compt := True;
-               message (1) := "Attenuation";
-               message (2) := "out of range";
+               message (1) := To_Unbounded_String ("Attenuation");
+               message (2) := To_Unbounded_String ("out of range");
                return;
             end if;
-            if alt_param
-            then
-               x_sweep.init_element (tcompt, 'a', prefix, unit1);
-            end if;
+--  ??            if alt_param
+--  ??            then
+--  ??               x_sweep.init_element (tcompt, 'a', prefix, unit1);
+--  ??            end if;
             if bad_compt
             then
                return;
@@ -1636,7 +1675,7 @@ package body pfun2 is
                --  S22
                co (c_s.all.z.all.c, 0.0, 0.0);
             else
-               co (c_s.all.z.all.c, value, 0);
+               co (c_s.all.z.all.c, value, 0.0);
             end if;
             --  S12=S21
          end loop;
@@ -1660,7 +1699,7 @@ package body pfun2 is
    --  label
    --  read_finish;
 
-   procedure Device_S (tcompt : compt; indef : boolean) is
+   procedure Device_S (tcompt : compt; indef : Boolean) is
       --  * Device_S *
       c_ss, c_f, c_is : s_param;
       s1, s2 : array (1 .. 10, 1 .. 10) of PMemComplex;
@@ -1850,9 +1889,9 @@ package body pfun2 is
          then
             bad_compt := True;
             Erase_Message;
-            message (1) := "Frequency out of";
-            message (2) := "   range given   ";
-            message (3) := "in device file";
+            message (1) := To_Unbounded_String ("Frequency out of");
+            message (2) := To_Unbounded_String ("   range given   ");
+            message (3) := To_Unbounded_String ("in device file");
          end if;
       end;
       --  [P2Ada]: end of WITH
@@ -1870,23 +1909,23 @@ package body pfun2 is
       dx, dy : Long_Float;
       dx_prefix, dy_prefix : Character;
 
-      procedure Big_Check (dt : in out Long_Float; i_in : in out integer) is
+      procedure Big_Check (dt : in out Long_Float; i_in : in out Integer) is
       begin
          while abs (dt) > 1000.0
          loop
             --  set-up prefix change
-            dt := dt / 1000;
+            dt := dt / 1000.0;
             i_in := i_in - 1;
          end loop;
       end Big_Check;
       --  *****************************************************
 
-      procedure Small_Check (dt : in out Long_Float; i_in : in out integer) is
+      procedure Small_Check (dt : in out Long_Float; i_in : in out Integer) is
       begin
          while abs (dt) < 0.01
          loop
             --  set-up prefix change
-            dt := dt * 1000;
+            dt := dt * 1000.0;
             i_in := i_in + 1;
          end loop;
       end Small_Check;
@@ -1989,7 +2028,7 @@ package body pfun2 is
    --  Draw a transmission line and lumped element on the circuit board.
    --  *
 
-   procedure Draw_tline (tnet : net; linex, seperate : boolean) is
+   procedure Draw_tline (tnet : net; linex, seperate : Boolean) is
       x1, x2, y1, y2, x3, y3, x1e, y1e, x2e, y2e, i, j : Integer;
       x1r, y1r, x2r, y2r : Long_Float;
    begin
@@ -2155,7 +2194,7 @@ package body pfun2 is
    --  Used below in Set_Up_KeyO and Set_Up_Board
    --  *
 
-   procedure Add_Coord (x1, xb, xl, y1 : integer; just, brd : boolean;
+   procedure Add_Coord (x1, xb, xl, y1 : Integer; just, brd : Boolean;
                         tdes : line_string) is
    begin
       if ccompt = null
@@ -2347,7 +2386,7 @@ package body pfun2 is
       pwidthyZ02 := Round (widthZ0 * 0.5 / psy);
       cwidthxZ02 := Round (widthZ0 * 0.5 / csx);
       cwidthyZ02 := Round (widthZ0 * 0.5 / csy);
-      Rs_at_fd := sqrt (Pi * design_freq * Eng_Prefix (freq_prefix) * Mu_0 /
+      Rs_at_fd := Sqrt (Pi * design_freq * Eng_Prefix (freq_prefix) * Mu_0 /
                           conductivity);
       Lambda_fd := c_in_mm / (design_freq * Eng_Prefix (freq_prefix));
       tcompt := null;
@@ -2405,7 +2444,7 @@ package body pfun2 is
       tnet : net;
       d2 : Integer;
    begin
-      look_backO := false;
+      look_backO := False;
       coupler_found := False;
       if cnet /= null
       then
@@ -2480,10 +2519,10 @@ package body pfun2 is
                            tnet := mate_node (1);
                            Mate_Node (1) := Mate_Node (3);
                            mate_node (3) := tnet;
-                           look_backO := true;
+                           look_backO := True;
                         when 4 =>
                            ym := ym - cm;
-                           look_backO := true;
+                           look_backO := True;
                         when 8 =>
                            if d2 = 2
                            then
@@ -2505,10 +2544,10 @@ package body pfun2 is
                            tnet := mate_node (1);
                            Mate_Node (1) := Mate_Node (3);
                            mate_node (3) := tnet;
-                           look_backO := true;
+                           look_backO := True;
                         when 2 =>
                            ym := ym + cm;
-                           look_backO := true;
+                           look_backO := True;
                         when 1 =>
                            if d2 = 4
                            then
@@ -2534,10 +2573,10 @@ package body pfun2 is
                            tnet := mate_node (1);
                            Mate_Node (1) := Mate_Node (3);
                            mate_node (3) := tnet;
-                           look_backO := true;
+                           look_backO := True;
                         when 1 =>
                            xm := xm - cm;
-                           look_backO := true;
+                           look_backO := True;
                         when 2 =>
                            if d2 = 8
                            then
@@ -2559,10 +2598,10 @@ package body pfun2 is
                            tnet := mate_node (1);
                            Mate_Node (1) := Mate_Node (3);
                            mate_node (3) := tnet;
-                           look_backO := true;
+                           look_backO := True;
                         when 8 =>
                            xm := xm + cm;
-                           look_backO := true;
+                           look_backO := True;
                         when 4 =>
                            if d2 = 1
                            then
