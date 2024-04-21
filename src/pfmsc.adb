@@ -1,6 +1,8 @@
 
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
+with Utils;                 use Utils;
+
 package body pfmsc is
 
    procedure Device_Read (tcompt : compt; indef : Boolean) is
@@ -8,7 +10,7 @@ package body pfmsc is
       c_ss, c_f : s_param;
       template : Unbounded_String;
       ext_string : Unbounded_String;
-      first_char : String (1 .. 1);
+      first_char : Character;
       char1, char2 : Character;
       freq_present, Eesof_format : Boolean;
       i, j, number_of_s, code1, number_of_ports, Eesof_ports : Integer;
@@ -20,10 +22,11 @@ package body pfmsc is
 
       procedure Pars_tplate (tp : Unbounded_String; n_c, n_s : in out Integer;
                              f_p : in out Boolean) is
-         i, j, i1, i2, x, code : Integer;
-         ijc : array (1 .. 16) of String (1 .. 2);
+         i, i1, i2, x : Integer;
+         ijc : array (1 .. 16) of Unbounded_String;
+         tp1 : Unbounded_String :=  tp;
       begin
-         if (Pos ('f', tp) > 0) or else (Pos ('F', tp) > 0)
+         if (Index (tp, "f") > 0) or else (Index (tp, "F") > 0)
          then
             f_p := True;
          else
@@ -31,9 +34,9 @@ package body pfmsc is
          end if;
          n_s := 0;
          loop
-            i1 := Pos ('s', tp);
+            i1 := Index (tp, "s");
             i := i1;
-            i2 := Pos ('S', tp);
+            i2 := Index (tp, "S");
             if i1 < i2
             then
                if i1 > 0
@@ -52,28 +55,29 @@ package body pfmsc is
             end if;
             if i > 0
             then
-               Delete (tp, 1, i);
+               Delete (tp1, 1, i);
                n_s := n_s + 1;
-               if Length (tp) >= 2
+               if Length (tp1) >= 2
                then
-                  ijc (n_s) := tp;
-                  Delete (tp, 1, 2);
+                  ijc (n_s) := tp1;
+                  Delete (tp1, 1, 2);
                end if;
             end if;
-            exit when Length (tp) = 0 or else i = 0;
+            exit when Length (tp1) = 0 or else i = 0;
          end loop;
          n_c := 1;
          for i in 1 .. n_s
          loop
-            Val (ijc (i), x, code);
-            if code /= 0
-            then
-               bad_compt := True;
-               message (1) := To_Unbounded_String ("Bad port number");
-               message (2) := To_Unbounded_String ("in device");
-               message (3) := To_Unbounded_String ("file template");
-               return;
-            end if;
+            x := Integer'Value (To_String (ijc (i)));
+            --  Val (ijc (i), x, code);
+            --  if code /= 0
+            --  then
+            --     bad_compt := True;
+            --     message (1) := To_Unbounded_String ("Bad port number");
+            --     message (2) := To_Unbounded_String ("in device");
+            --     message (3) := To_Unbounded_String ("file template");
+            --     return;
+            --  end if;
             iji (i, 1) := x / 10;
             iji (i, 2) := x - iji (i, 1) * 10;
             if (iji (i, 1) < 1) or else (iji (i, 2) < 1)
@@ -125,8 +129,11 @@ package body pfmsc is
          char1 : Character;
          code : Integer;
          found : Boolean;
+         set1 : constant CharacterArray :=
+           ('+', '-', '.', ',', 'e', 'E',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
       begin
-         ss := first_char;
+         ss := To_Unbounded_String ("" & first_char);
          found := False;
          if ss = ""
          then
@@ -142,24 +149,19 @@ package body pfmsc is
                      Get (dev_file);
                      Skip_Line;
                   end if;
-                  --  if blank line then advance to next line
-                  --  [P2Ada]: !Help! Maybe (file,...) here
-                  --  read single character
-                  --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
                   Get (dev_file);
                   Get (char1);
-                  if char1 and (lbrack | '#' | '!' => True, others => False)
+                  if char1 = Character (lbrack) or else
+                     char1 = '#' or else char1 = '!'
                   then
-                     --  [P2Ada]: !Help! Maybe (file)
                      Get (dev_file);
                      Skip_Line;
                   end if;
                   --  skip potential comment lines
                   --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
-                  if char1 and ('+' | '-' | '.' | ',' | '0' .. '9' | 'e' | 'E'
-                                  | '\' => True, others => False)
+                  if is_in (char1, set1)
                   then
-                     ss := char1;
+                     ss := To_Unbounded_String ("" & char1);
                      found := True;
                   end if;
                   exit when found or else End_of_File (dev_file);
@@ -174,10 +176,9 @@ package body pfmsc is
                --  invalid
                Get (dev_file);
                Get (char1);
-               if char1 and ('+' | '-' | '.' | ',' | '0' .. '9' | 'e' | 'E'
-                             => True, others => False)
+               if is_in (char1, set1)
                then
-                  ss := ss + char1;
+                  ss := ss & char1;
                else
                   found := True;
                end if;
@@ -186,23 +187,27 @@ package body pfmsc is
             end loop;
          end if;
          --  turn string ss into double number
-         Val (ss, s, code);
-         if code /= 0 or else Length (ss) = 0
-         then
-            bad_compt := True;
-            message (1) := To_Unbounded_String ("Extra or missing");
-            message (2) := To_Unbounded_String ("number in");
-            message (3) := To_Unbounded_String ("device file");
-         end if;
+         s := Long_Float'Value (To_String (ss));
+         --  Val (ss, s, code);
+         --  if code /= 0 or else Length (ss) = 0
+         --  then
+         --     bad_compt := True;
+         --     message (1) := To_Unbounded_String ("Extra or missing");
+         --     message (2) := To_Unbounded_String ("number in");
+         --     message (3) := To_Unbounded_String ("device file");
+         --  end if;
          --  if code <> 0
       end Read_Number;
 
       procedure Seek_File_Start (temp_exists : Boolean) is
          char1 : Character;
          found : Boolean;
+         set1 : constant CharacterArray := (
+            '+', '-', '.', ',',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
       begin
          found := False;
-         first_char := "";
+         first_char := ' ';
          loop
             --  keep reading characters until a valid one is found
             while SeekEoln (dev_file)
@@ -213,14 +218,13 @@ package body pfmsc is
             end loop;
             --  Advance past any blank lines
             loop
-               --  [P2Ada]: !Help! Maybe (file,...) here
-               --  find single character
                Get (dev_file);
                Get (char1);
                exit when (char1 /= ' ') or else End_of_File (dev_file);
             end loop;
             --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
-            if char1 and (lbrack | '#' | '!' => True, others => False)
+            if char1 = Character (lbrack) or else
+               char1 = '#' or else char1 = '!'
             then
                --  [P2Ada]: !Help! Maybe (file)
                Get (dev_file);
@@ -230,15 +234,15 @@ package body pfmsc is
             if temp_exists
             then
                --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
-               if char1 and ('f' | 'F' | 's' | 'S' => True, others => False)
+               if char1 = 'f' or else char1 = 'F' or else
+                  char1 = 's' or else char1 = 'S'
                then
                   first_char := char1;
                   found := True;
                end if;
                --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
             else
-               if char1 and ('+' | '-' | '.' | ',' | '0' .. '9' => True,
-                             others => False)
+               if is_in (char1, set1)
                then
                   first_char := char1;
                   found := True;
@@ -247,9 +251,7 @@ package body pfmsc is
             exit when found or else End_of_File (dev_file);
          end loop;
       end Seek_File_Start;
-      --  ********************************************************
-      --  * Device_Read *
-      --  get filename and length
+
    begin
       Get_Device_Params (tcompt, fname, tcompt.all.lngth);
       if bad_compt
@@ -258,21 +260,18 @@ package body pfmsc is
       end if;
       --  ! length check moved from this location
       Eesof_format := False;
-      i := Pos ('.', fname);
+      i := Index (fname, ".");
       if i = 0
       then
          --  add .dev extension
          --  Check for Eesof type extension
          --  copy 3 character extension
-         fname := fname + ".dev";
+         fname := fname & ".dev";
       else
          ext_string := Copy (fname, i + 1, 3);
          if Length (ext_string) = 3
          then
-            --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
-            --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
-            --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
-            if (ext_string (1) and ('s' | 'S' => True, others => False))
+            if (ext_string (1) = 's' or else ext_string (1) = 'S')
               and then (ext_string (2) and ('1' .. '4' => True,
               others => False)) and then (ext_string (3) and
               ('p' | 'P' => True, others => False))
@@ -290,7 +289,7 @@ package body pfmsc is
       --  ext check
       if (tcompt.all.f_file = null) or else tcompt.all.changed
       then
-         if fileexists (true, dev_file, fname)
+         if fileexists (True, dev_file, fname)
          then
             --  [P2Ada]: WITH instruction
             --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_1.' to fields
@@ -350,8 +349,8 @@ package body pfmsc is
                         Get (char1);
                         Get (char2);
                         Skip_Line;
-                        exit when ((char1 = '\') and then (char2 and
-                           ('s' | 'S' => True, others => False))) or else
+                        exit when ((char1 = '\') and then
+                                     (char2 = 's' or else char2 = 'S')) or else
                            End_Of_File (dev_file);
                      end loop;
                      if End_of_File (dev_file)
@@ -367,7 +366,7 @@ package body pfmsc is
                   --  if Pos('\b')
                   --  now check for valid template = e.g. ' f   s11  s21  s12
                   --  s22 '
-                  while template (1) = ' '
+                  while Element (template, 1) = ' '
                   loop
                      Delete (template, 1, 1);
                   end loop;
@@ -400,7 +399,7 @@ package body pfmsc is
                      Get (template);
                      Skip_Line;
                      Insert (first_char, template, 1);
-                     first_char := "";
+                     first_char := ' ';
                      Pars_tplate (template, number_of_ports, number_of_s,
                                   freq_present);
                   end if;

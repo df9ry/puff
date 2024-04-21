@@ -1,4 +1,8 @@
 
+--  with Interfaces.C;
+
+with xgraph;                use xgraph;
+
 package body Utils is
 
    function is_in (ch : char; rg : CharArray) return Boolean is
@@ -27,5 +31,12 @@ package body Utils is
    begin
       return Integer (Long_Float'Rounding (x));
    end Round;
+
+   procedure PutFloat (Item : Long_Float; Fore, Aft, Exp : Integer) is
+      pragma Unreferenced (Fore, Aft, Exp);
+   begin
+      --  s := Long_Float'Image (Item, Fore, Aft, Exp);
+      PutStr (Interfaces.C.To_C (Long_Float'Image (Item)));
+   end PutFloat;
 
 end Utils;

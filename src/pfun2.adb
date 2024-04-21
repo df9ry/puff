@@ -5,9 +5,14 @@ use  Ada.Numerics.Long_Elementary_Functions;
 with Ada.Strings.Unbounded;
 use  Ada.Strings.Unbounded;
 
+with Ada.Characters.Handling;
+use  Ada.Characters.Handling;
+
 with Interfaces;   use Interfaces;
 with Interfaces.C; use Interfaces.C;
 with Utils;        use Utils;
+
+with xgraph;       use xgraph;
 
 package body pfun2 is
 
@@ -845,6 +850,10 @@ package body pfun2 is
                   if (j > 0) or else (i < 3)
                   then
                      --  value_str and prefix not used here
+                     value := 0.0;
+                     unit1 := ' ';
+                     prefix := ' ';
+                     alt_param := False;
                      Get_Param (tcompt, i, value, value_str, unit1, prefix,
                                 alt_param);
                      if bad_compt
@@ -1057,10 +1066,13 @@ package body pfun2 is
             then
                if stripline
                then
-                  w_s_stripline_cline (zed, zedo, widthc, spacec);
+                  widthc := 0.0;
+                  spacec := 0.0;
+                  w_s_stripline_cline (P2Ada_Var_17.zed,
+                                       P2Ada_Var_17.zedo, widthc, spacec);
                else
-                  wide := widtht (zed / 2.0) / substrate_h;
-                  wido := widtht (zedo / 2.0) / substrate_h;
+                  wide := widtht (P2Ada_Var_17.zed / 2.0) / substrate_h;
+                  wido := widtht (P2Ada_Var_17.zedo / 2.0) / substrate_h;
                   if bad_compt
                   then
                      return;
@@ -1070,20 +1082,20 @@ package body pfun2 is
                if not (bad_compt)
                then
                   --  ! * Artwork correction added here ^ *
-                  width := widthc * substrate_h + artwork_cor;
-                  con_space := (widthc + spacec) * substrate_h;
-                  if (con_space < resln) and then not (Manhat_on)
+                  P2Ada_Var_17.width := widthc * substrate_h + artwork_cor;
+                  P2Ada_Var_17.con_space := (widthc + spacec) * substrate_h;
+                  if (P2Ada_Var_17.con_space < resln) and then not (Manhat_on)
                   then
                      bad_compt := True;
                      message (1) := To_Unbounded_String ("clines spacing is");
                      message (2) := To_Unbounded_String ('<' & sresln);
                      message (3) :=
-                       To_Unboundes_String (Character (Omega) & "e/"
+                       To_Unbounded_String (Character (Omega) & "e/"
                                             & Character (Omega)
                                             & "o is too big");
                      return;
                   end if;
-                  if (width < resln) and then not (Manhat_on)
+                  if (P2Ada_Var_17.width < resln) and then not (Manhat_on)
                   then
                      bad_compt := True;
                      message (1) := To_Unbounded_String ("Even impedance is");
@@ -1098,10 +1110,11 @@ package body pfun2 is
                      ere := er;
                   else
                      ere_even_odd (widthc, spacec, eree, ereo);
-                     ere := 4 * eree * ereo / ((sqrt (eree) +
-                                                 sqrt (ereo)) ** 2);
+                     ere := 4.0 * eree * ereo / ((Sqrt (eree) +
+                                                 Sqrt (ereo)) ** 2);
                   end if;
-                  if (lngth = 0) and then (wavelength = 0)
+                  if (P2Ada_Var_17.lngth = 0.0) and then
+                    (P2Ada_Var_17.wavelength = 0.0)
                   then
                      bad_compt := True;
                      message (1) := To_Unbounded_String ("Missing cline");
@@ -1110,14 +1123,17 @@ package body pfun2 is
                                                          & Character (Degree));
                      return;
                   else
-                     if lngth = 0
+                     if P2Ada_Var_17.lngth = 0.0
                      then
-                        lngth := Lambda_fd * wavelength / sqrt (ere);
+                        P2Ada_Var_17.lngth := Lambda_fd *
+                          P2Ada_Var_17.wavelength / Sqrt (ere);
                      end if;
                      --  used in cl_dispersion
-                     wavelength := lngth * sqrt (eree) / Lambda_fd;
-                     wavelengtho := lngth * sqrt (ereo) / Lambda_fd;
-                     lngth0 := lngth;
+                     P2Ada_Var_17.wavelength := P2Ada_Var_17.lngth *
+                       Sqrt (eree) / Lambda_fd;
+                     P2Ada_Var_17.wavelengtho := P2Ada_Var_17.lngth *
+                       Sqrt (ereo) / Lambda_fd;
+                     P2Ada_Var_17.lngth0 := P2Ada_Var_17.lngth;
                      case z_index is
                         when 5 =>
                            x_sweep.Load_Prop_Const (Sqrt (eree) /
@@ -1125,11 +1141,11 @@ package body pfun2 is
                                                       Sqrt (ere));
                         when 6 =>
                            x_sweep.Load_Prop_Const (Sqrt (eree) /
-                                                      lambda_fd, Sqrt (ereo) /
+                                                      Lambda_fd, Sqrt (ereo) /
                                                       Lambda_fd);
                         when 7 =>
                            x_sweep.Load_Prop_Const (substrate_h *
-                                                      Sqrt (eree) / lambda_fd,
+                                                      Sqrt (eree) / Lambda_fd,
                                                     substrate_h * Sqrt (ereo) /
                                                       Lambda_fd);
                         when others =>
@@ -1166,12 +1182,13 @@ package body pfun2 is
                         end if;
                         case unit1 is
                            when Character (Degree) =>
-                              lngth := lngth + Lambda_fd * (value / 360.0) /
-                                sqrt (ere);
+                              P2Ada_Var_17.lngth := P2Ada_Var_17.lngth +
+                                Lambda_fd * (value / 360.0) / Sqrt (ere);
                            when 'h' | 'H' =>
-                              lngth := lngth + value * substrate_h;
+                              P2Ada_Var_17.lngth := P2Ada_Var_17.lngth +
+                                value * substrate_h;
                            when 'm' =>
-                              lngth := lngth + value;
+                              P2Ada_Var_17.lngth := P2Ada_Var_17.lngth + value;
                            when others =>
                               begin
                                  bad_compt := True;
@@ -1189,7 +1206,7 @@ package body pfun2 is
                      --  if j > 0
                   end if;
                   --  else lngth=wavelength=0
-                  if (lngth < 0) and then not (Manhat_on)
+                  if (P2Ada_Var_17.lngth < 0.0) and then not (Manhat_on)
                   then
                      bad_compt := True;
                      message (1) := To_Unbounded_String ("Negative");
@@ -1209,18 +1226,12 @@ package body pfun2 is
             if Manhat_on
             then
                --  * if Manhatton then fix dimensions *
-               width := Manh_width;
-               con_space := Manh_length;
-               lngth := Manh_length;
+               P2Ada_Var_17.width := Manh_width;
+               P2Ada_Var_17.con_space := Manh_length;
+               P2Ada_Var_17.lngth := Manh_length;
             end if;
             --  * if Manhatton *
          end;
-         --  [P2Ada]: end of WITH
-         --  with
-         --  if action true
-         --  if no action then compute s-parameters
-         --  normalized
-         --  Re-compute Zo and wavelength when dispersive microstrip
       else
          gamma := freq / design_freq;
          if tcompt.all.super and then not (stripline)
@@ -1232,13 +1243,13 @@ package body pfun2 is
             if i = 1
             then
                zd := tcompt.all.zed / Z0;
-               elength := 2 * Pi * tcompt.all.wavelength;
+               elength := 2.0 * Pi * tcompt.all.wavelength;
                alpha_tl := (tcompt.all.alpha_d * gamma +
                               Rough_alpha (tcompt.all.alpha_c) * Sqrt (gamma))
                  * tcompt.all.lngth0;
             else
                zd := tcompt.all.zedo / Z0;
-               elength := 2 * Pi * tcompt.all.wavelengtho;
+               elength := 2.0 * Pi * tcompt.all.wavelengtho;
                alpha_tl := (tcompt.all.alpha_do * gamma +
                               Rough_alpha (tcompt.all.alpha_co) * Sqrt (gamma))
                  * tcompt.all.lngth0;
@@ -1272,14 +1283,14 @@ package body pfun2 is
             loop
                if c_s = null
                then
-                  new_s (tcompt.all.s_begin);
+                  tcompt.all.s_begin := new s_parameter_record;
                   c_s := tcompt.all.s_begin;
                else
-                  new_s (c_s.all.next_s);
+                  c_s.all.next_s := new s_parameter_record;
                   c_s := c_s.all.next_s;
                end if;
                c_s.all.next_s := null;
-               New_c (c_s.all.z);
+               c_s.all.z := new TMemComplex;
                if i > 2
                then
                   mi := i - 2;
@@ -1313,10 +1324,20 @@ package body pfun2 is
       then
          --  [P2Ada]: WITH instruction
          --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_18.' to fields
-         declare P2Ada_Var_18 : compt renames tcompt.all;
+         declare P2Ada_Var_18 : compt_record renames tcompt.all;
          begin
-            number_of_con := 2;
-            con_space := 0.0;
+            P2Ada_Var_18.number_of_con := 2;
+            P2Ada_Var_18.con_space := 0.0;
+
+            for i in value'Range loop
+               value (i) := 0.0;
+            end loop;
+
+            unit1 := ' ';
+            ident := ' ';
+            prefix := ' ';
+            alt_param := False;
+            parallel_cir := False;
             Get_Lumped_Params (tcompt, value (1), value (2), value (3),
                                value (4), unit1, ident, prefix, alt_param,
                                parallel_cir);
@@ -1331,7 +1352,7 @@ package body pfun2 is
                j := 0;
                for i in 1 .. 3
                loop
-                  if value (i) /= 0
+                  if value (i) /= 0.0
                   then
                      j := j + 1;
                   end if;
@@ -1355,14 +1376,12 @@ package body pfun2 is
                      i := 0;
                      loop
                         i := i + 1;
-                        exit when value (i) /= 0;
+                        exit when value (i) /= 0.0;
                      end loop;
-                     --  * value[i] is now the alt_parm *
-                     --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
-                     if i and (1 .. 3 => True, others => False)
-                     then
-                        x_sweep.init_element (tcompt, ident, prefix, unit1);
-                     end if;
+                     --  if i >= 1 and then i <= 3
+                     --  then
+                     --  x_sweep.init_element (tcompt, ident, prefix, unit1);
+                     --  end if;
                      x_sweep.Load_Index (i);
                   end if;
                end if;
@@ -1372,46 +1391,45 @@ package body pfun2 is
             then
                return;
             end if;
-            if Manhattan (tcompt) or else (value (4) = 0)
+            if Manhattan (tcompt) or else (value (4) = 0.0)
             then
                --  * Select Manhattan layout *
-               width := Manh_width;
-               lngth := 2.0 * Manh_width;
+               P2Ada_Var_18.width := Manh_width;
+               P2Ada_Var_18.lngth := 2.0 * Manh_width;
             else
-               lngth := value (4);
-               width := 0;
+               P2Ada_Var_18.lngth := value (4);
+               P2Ada_Var_18.width := 0.0;
             end if;
             case unit1 is
                when Character (Omega) =>
-                  zed := value (1) / Z0;
-                  zedo := value (2) / Z0;
-                  wavelength := value (3) / Z0;
-                  spec_freq := 1;
+                  P2Ada_Var_18.zed := value (1) / Z0;
+                  P2Ada_Var_18.zedo := value (2) / Z0;
+                  P2Ada_Var_18.wavelength := value (3) / Z0;
+                  P2Ada_Var_18.spec_freq := 1.0;
                when 'z' | 'Z' =>
-                  zed := value (1);
-                  zedo := value (2);
-                  wavelength := value (3);
-                  spec_freq := 1;
+                  P2Ada_Var_18.zed := value (1);
+                  P2Ada_Var_18.zedo := value (2);
+                  P2Ada_Var_18.wavelength := value (3);
+                  P2Ada_Var_18.spec_freq := 1.0;
                when 's' | 'S' =>
-                  zed := value (1) * Z0;
-                  zedo := value (2) * Z0;
-                  wavelength := value (3) * Z0;
-                  spec_freq := -1;
+                  P2Ada_Var_18.zed := value (1) * Z0;
+                  P2Ada_Var_18.zedo := value (2) * Z0;
+                  P2Ada_Var_18.wavelength := value (3) * Z0;
+                  P2Ada_Var_18.spec_freq := -1.0;
                when 'y' | 'Y' =>
-                  zed := value (1);
-                  zedo := value (2);
-                  wavelength := value (3);
-                  spec_freq := -1;
+                  P2Ada_Var_18.zed := value (1);
+                  P2Ada_Var_18.zedo := value (2);
+                  P2Ada_Var_18.wavelength := value (3);
+                  P2Ada_Var_18.spec_freq := -1.0;
                when others =>
-                  --  [P2Ada]: no otherwise / else in Pascal
                   null;
             end case;
             --  case
-            if zed < 0
+            if P2Ada_Var_18.zed < 0.0
             then
-               zed := zed * one;
+               P2Ada_Var_18.zed := P2Ada_Var_18.zed * one;
             end if;
-            if lngth <= resln
+            if P2Ada_Var_18.lngth <= resln
             then
                bad_compt := True;
                message (1) := To_Unbounded_String ("lumped length");
@@ -1419,49 +1437,46 @@ package body pfun2 is
                message (3) := To_Unbounded_String ('>' & sresln);
             end if;
          end;
-         --  [P2Ada]: end of WITH
-         --  with
-         --  normalized
-         --  [P2Ada]: WITH instruction
-         --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_19.' to fields
       else
          ff := freq / design_freq;
-         declare P2Ada_Var_19 : compt renames tcompt.all;
+         declare P2Ada_Var_19 : compt_record renames tcompt.all;
          begin
-            if spec_freq > 0
+            if P2Ada_Var_19.spec_freq > 0.0
             then
                --  z ,zedo=Ind wavlength=Cap
-               if freq = 0
+               if freq = 0.0
                then
-                  if wavelength = 0
+                  if P2Ada_Var_19.wavelength = 0.0
                   then
-                     co (s21, 1 / (1 + zed / 2), 0);
+                     co (s21, 1.0 / (1.0 + P2Ada_Var_19.zed / 2.0), 0.0);
                   else
                      co (s21, 0.0, 0.0);
                   end if;
                else
-                  zi := (zedo * ff + wavelength / ff) / 2;
-                  co (zo2, 1 + zed / 2, zi);
+                  zi := (P2Ada_Var_19.zedo *
+                           ff + P2Ada_Var_19.wavelength / ff) / 2.0;
+                  co (zo2, 1.0 + P2Ada_Var_19.zed / 2.0, zi);
                   rc (s21, zo2);
                end if;
                --  y
-               s11.r := 1 - s21.r;
+               s11.r := 1.0 - s21.r;
                s11.i := -s21.i;
             else
-               if freq = 0
+               if freq = 0.0
                then
-                  if wavelength = 0
+                  if P2Ada_Var_19.wavelength = 0.0
                   then
-                     co (s11, 1 / (1 + zed * 2), 0);
+                     co (s11, 1.0 / (1.0 + P2Ada_Var_19.zed * 2.0), 0.0);
                   else
                      co (s11, 0.0, 0.0);
                   end if;
                else
-                  zi := 2 * (zedo * ff + wavelength / ff);
-                  co (yb2, 1 + 2 * zed, zi);
+                  zi := 2.0 * (P2Ada_Var_19.zedo *
+                                 ff + P2Ada_Var_19.wavelength / ff);
+                  co (yb2, 1.0 + 2.0 * P2Ada_Var_19.zed, zi);
                   rc (s11, yb2);
                end if;
-               s21.r := 1 - s11.r;
+               s21.r := 1.0 - s11.r;
                s21.i := -s11.i;
             end if;
          end;
@@ -1473,14 +1488,14 @@ package body pfun2 is
             loop
                if c_s = null
                then
-                  new_s (tcompt.all.s_begin);
+                  tcompt.all.s_begin := new s_parameter_record;
                   c_s := tcompt.all.s_begin;
                else
-                  new_s (c_s.all.next_s);
+                  c_s.all.next_s := new s_parameter_record;
                   c_s := c_s.all.next_s;
                end if;
                c_s.all.next_s := null;
-               New_c (c_s.all.z);
+               c_s.all.z := new TMemComplex;
                if i = j
                then
                   co (c_s.all.z.all.c, s11.r, s11.i);
@@ -1496,21 +1511,22 @@ package body pfun2 is
 
    procedure Transformer (tcompt : compt) is
       denom, turns_ratio, S11, S21 : Long_Float;
-      i : Integer;
       unit1, prefix : Character;
       value_string : Unbounded_String;
       alt_param : Boolean;
    begin
       if action
       then
-         --  [P2Ada]: WITH instruction
-         --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_20.' to fields
-         declare P2Ada_Var_20 : compt renames tcompt.all;
+         declare P2Ada_Var_20 : compt_record renames tcompt.all;
          begin
             --  ! t_ratio has prefixes factored in - must catch as an error
             --  if ':' present it will return as unit1
-            number_of_con := 2;
-            con_space := 0.0;
+            P2Ada_Var_20.number_of_con := 2;
+            P2Ada_Var_20.con_space := 0.0;
+            turns_ratio := 0.0;
+            unit1 := ' ';
+            prefix := ' ';
+            alt_param := False;
             Get_Param (tcompt, 1, turns_ratio, value_string, unit1, prefix,
                        alt_param);
             if bad_compt
@@ -1534,44 +1550,29 @@ package body pfun2 is
             then
                return;
             end if;
-            --  * Use Manhattan dimensions    *
-            --  ***Negative values OK, just imply a 180 phase shift***
-            --  if turns_ratio < 0 then turns_ratio:=Abs(turns_ratio);
-            --  {take absolute value if negative}
-            --  ****
-            --  Pass turns ratio to tcompt^.zed
-            width := Manh_length;
-            lngth := Manh_length;
-            zed := turns_ratio;
+            P2Ada_Var_20.width := Manh_length;
+            P2Ada_Var_20.lngth := Manh_length;
+            P2Ada_Var_20.zed := turns_ratio;
          end;
-         --  [P2Ada]: end of WITH
-         --  with
-         --  action
-         --  * Fill frequency independent scattering parameters *
-         --  * Turns ratio given in tcompt^.zed *
-         --  denominator
-         --  S11=-S22
-         --  S12= S21
-         --  S11
       else
          denom := ((tcompt.all.zed) ** 2) + 1.0;
          S11 := (denom - 2.0) / denom;
          S21 := 2.0 * tcompt.all.zed / denom;
-         new_s (tcompt.all.s_begin);
+         tcompt.all.s_begin := new s_parameter_record;
          c_s := tcompt.all.s_begin;
-         New_c (c_s.all.z);
-         co (c_s.all.z.all.c, S11, 0);
+         c_s.all.z := new TMemComplex;
+         co (c_s.all.z.all.c, S11, 0.0);
          for i in 2 .. 4
          loop
-            new_s (c_s.all.next_s);
+            c_s.all.next_s := new s_parameter_record;
             c_s := c_s.all.next_s;
-            New_c (c_s.all.z);
+            c_s.all.z := new TMemComplex;
             if i = 4
             then
                --  S22=-S11
-               co (c_s.all.z.all.c, -S11, 0);
+               co (c_s.all.z.all.c, -S11, 0.0);
             else
-               co (c_s.all.z.all.c, S21, 0);
+               co (c_s.all.z.all.c, S21, 0.0);
             end if;
             --  S12=S21
          end loop;
@@ -1589,23 +1590,27 @@ package body pfun2 is
 
    procedure Attenuator (tcompt : compt) is
       value : Long_Float;
-      i : Integer;
       unit1, prefix : Character;
-      value_string : line_string;
+      value_string : Unbounded_String;
       alt_param : Boolean;
    begin
       if action
       then
          --  [P2Ada]: WITH instruction
          --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_21.' to fields
-         declare P2Ada_Var_21 : compt renames tcompt.all;
+         declare P2Ada_Var_21 : compt_record renames tcompt.all;
          begin
             --  * value_string, prefix are ignored
             --  value has prefixes factored in at this point
             --  if entered in dB then unit1 returns 'd' or 'D'
             --  if no unit then unit1 = '?'
-            number_of_con := 2;
-            con_space := 0.0;
+            P2Ada_Var_21.number_of_con := 2;
+            P2Ada_Var_21.con_space := 0.0;
+            value := 0.0;
+            unit1 := ' ';
+            prefix := ' ';
+            alt_param := False;
+
             Get_Param (tcompt, 1, value, value_string, unit1, prefix,
                        alt_param);
             if bad_compt
@@ -1623,7 +1628,7 @@ package body pfun2 is
             --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
             if not (unit1 = 'd'
                     or else unit1 = 'D'
-                    or else unit1 = '?'
+                    or else unit1 = '?')
             then
                bad_compt := True;
                message (1) := To_Unbounded_String ("Enter");
@@ -1649,9 +1654,9 @@ package body pfun2 is
             --  * Draw as a square box using *
             --  * Manhattan dimensions  *
             --  zed is dB value of S12,S21
-            width := 2.0 * Manh_width;
-            lngth := width;
-            zed := value;
+            P2Ada_Var_21.width := 2.0 * Manh_width;
+            P2Ada_Var_21.lngth := P2Ada_Var_21.width;
+            P2Ada_Var_21.zed := value;
          end;
          --  [P2Ada]: end of WITH
          --  with
@@ -1661,15 +1666,15 @@ package body pfun2 is
          --  S11
       else
          value := Exp (-ln10 * tcompt.all.zed / 20.0);
-         new_s (tcompt.all.s_begin);
+         tcompt.all.s_begin := new s_parameter_record;
          c_s := tcompt.all.s_begin;
-         New_c (c_s.all.z);
+         c_s.all.z := new TMemComplex;
          co (c_s.all.z.all.c, 0.0, 0.0);
          for i in 2 .. 4
          loop
-            new_s (c_s.all.next_s);
+            c_s.all.next_s := new s_parameter_record;
             c_s := c_s.all.next_s;
-            New_c (c_s.all.z);
+            c_s.all.z := new TMemComplex;
             if i = 4
             then
                --  S22
@@ -1683,28 +1688,13 @@ package body pfun2 is
          c_s.all.next_s := null;
       end if;
    end Attenuator;
-   --  * Attenuator *
-   --  *
-   --  See PFMSC.PAS for Device_Read(): reads file data.
-   --  Called only if action is false,
-   --  to calculate interpolated device s-parameters.
-   --  Indef specifies whether or not to enable the generation
-   --  of indefinite scattering parameters (extra port).
-   --  type compt has the following s_param records:
-   --  tcompt^.s_begin,
-   --  tcompt^.s_file,
-   --  tcompt^.s_ifile,
-   --  tcompt^.f_file
-   --  *
-   --  label
-   --  read_finish;
 
    procedure Device_S (tcompt : compt; indef : Boolean) is
       --  * Device_S *
       c_ss, c_f, c_is : s_param;
       s1, s2 : array (1 .. 10, 1 .. 10) of PMemComplex;
-      found : Boolean;
-      i, j, k, txpt, tnpts : Integer;
+      found : Boolean := indef;
+      txpt, tnpts : Integer;
       f1, f2, tfreq, tfmin, ffac : Long_Float;
    begin
       if Alt_Sweep
@@ -1718,23 +1708,23 @@ package body pfun2 is
       then
          --  [P2Ada]: WITH instruction
          --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_22.' to fields
-         declare P2Ada_Var_22 : compt renames tcompt.all;
+         declare P2Ada_Var_22 : compt_record renames tcompt.all;
          begin
-            if f_file /= null
+            if P2Ada_Var_22.f_file /= null
             then
-               tfmin := f_file.all.z.all.c.r;
+               tfmin := P2Ada_Var_22.f_file.all.z.all.c.r;
             end if;
             --  first frequency
-            s_ifile := null;
+            P2Ada_Var_22.s_ifile := null;
             for txpt in 0 .. tnpts
             loop
-               if f_file /= null
+               if P2Ada_Var_22.f_file /= null
                then
                   if txpt = tnpts
                   then
                      tfreq := sxmax;
                   else
-                     tfreq := fmin + txpt * finc;
+                     tfreq := fmin + Long_Float (txpt) * finc;
                   end if;
                   if Alt_Sweep
                   then
@@ -1748,17 +1738,17 @@ package body pfun2 is
                      loop
                         if c_f = null
                         then
-                           c_f := f_file;
+                           c_f := P2Ada_Var_22.f_file;
                         else
                            c_f := c_f.all.next_s;
                         end if;
-                        for j in 1 .. number_of_con
+                        for j in 1 .. P2Ada_Var_22.number_of_con
                         loop
-                           for i in 1 .. number_of_con
+                           for i in 1 .. P2Ada_Var_22.number_of_con
                            loop
                               if c_ss = null
                               then
-                                 c_ss := s_file;
+                                 c_ss := P2Ada_Var_22.s_file;
                               else
                                  c_ss := c_ss.all.next_s;
                               end if;
@@ -1778,9 +1768,9 @@ package body pfun2 is
                      then
                         f1 := c_f.all.z.all.c.r;
                         f2 := c_f.all.next_s.all.z.all.c.r;
-                        for j in 1 .. number_of_con
+                        for j in 1 .. P2Ada_Var_22.number_of_con
                         loop
-                           for i in 1 .. number_of_con
+                           for i in 1 .. P2Ada_Var_22.number_of_con
                            loop
                               c_ss := c_ss.all.next_s;
                               s2 (i, j) := c_ss.all.z;
@@ -1796,13 +1786,13 @@ package body pfun2 is
                   then
                      c_ss := null;
                      found := True;
-                     for j in 1 .. number_of_con
+                     for j in 1 .. P2Ada_Var_22.number_of_con
                      loop
-                        for i in 1 .. number_of_con
+                        for i in 1 .. P2Ada_Var_22.number_of_con
                         loop
                            if c_ss = null
                            then
-                              c_ss := s_file;
+                              c_ss := P2Ada_Var_22.s_file;
                            else
                               c_ss := c_ss.all.next_s;
                            end if;
@@ -1815,26 +1805,26 @@ package body pfun2 is
                   --  if txpt=0
                end if;
                --  if f_file
-               for j in 1 .. number_of_con
+               for j in 1 .. P2Ada_Var_22.number_of_con
                loop
-                  for i in 1 .. number_of_con
+                  for i in 1 .. P2Ada_Var_22.number_of_con
                   loop
-                     if s_ifile = null
+                     if P2Ada_Var_22.s_ifile = null
                      then
-                        new_s (s_ifile);
-                        c_is := s_ifile;
+                        P2Ada_Var_22.s_ifile := new s_parameter_record;
+                        c_is := P2Ada_Var_22.s_ifile;
                      else
-                        new_s (c_is.all.next_s);
+                        c_is.all.next_s := new s_parameter_record;
                         c_is := c_is.all.next_s;
                      end if;
                      c_is.all.next_s := null;
                      if found
                      then
                         --  *device s-parameter interpolation routine*
-                        New_c (c_is.all.z);
-                        if f_file = null
+                        c_is.all.z := new TMemComplex;
+                        if P2Ada_Var_22.f_file = null
                         then
-                           ffac := 0;
+                           ffac := 0.0;
                         else
                            ffac := (tfreq - f1) / (f2 - f1);
                         end if;
@@ -1852,8 +1842,6 @@ package body pfun2 is
             end loop;
             --  for txpt
          end;
-         --  [P2Ada]: end of WITH
-         --  with
       end if;
       --  if xpt:=0
       if Alt_Sweep
@@ -1863,29 +1851,27 @@ package body pfun2 is
       else
          txpt := xpt;
       end if;
-      --  [P2Ada]: WITH instruction
-      --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_23.' to fields
-      declare P2Ada_Var_23 : compt renames tcompt.all;
+      declare P2Ada_Var_23 : compt_record renames tcompt.all;
       begin
-         s_begin := s_ifile;
+         P2Ada_Var_23.s_begin := P2Ada_Var_23.s_ifile;
          for k in 0 .. txpt - 1
          loop
             --  advance to next freq
-            for j in 1 .. number_of_con
+            for j in 1 .. P2Ada_Var_23.number_of_con
             loop
-               for i in 1 .. number_of_con
+               for i in 1 .. P2Ada_Var_23.number_of_con
                loop
-                  s_begin := s_begin.all.next_s;
-                  if s_begin = null
+                  P2Ada_Var_23.s_begin := P2Ada_Var_23.s_begin.all.next_s;
+                  if P2Ada_Var_23.s_begin = null
                   then
-                     message (2) := "s out of range";
+                     message (2) := To_Unbounded_String ("s out of range");
                      shutdown;
                   end if;
                end loop;
             end loop;
          end loop;
          --  for i,j,k
-         if s_begin.all.z = null
+         if P2Ada_Var_23.s_begin.all.z = null
          then
             bad_compt := True;
             Erase_Message;
@@ -1897,14 +1883,11 @@ package body pfun2 is
       --  [P2Ada]: end of WITH
       --  with
    end Device_S;
-   --  * Device_S *
-   --  *
-   --  Display change in x an y in mm when cursor X moves.
-   --  *
 
    procedure dx_dyO is
       --  *****************************************************
-      pos_prefix : string := "EPTGMk m" + Mu + "npfa";
+      pos_prefix : constant Unbounded_String :=
+        To_Unbounded_String ("EPTGMk m" & Character (Mu) & "npfa");
       i, j : Integer;
       dx, dy : Long_Float;
       dx_prefix, dy_prefix : Character;
@@ -1945,80 +1928,69 @@ package body pfun2 is
          Small_Check (dx, i);
       end if;
       --  start index is 'm' in mm
-      dx_prefix := pos_prefix (i);
+      dx_prefix := Element (pos_prefix, i);
       j := 8;
       if dy /= 0.0
       then
          Big_Check (dy, j);
          Small_Check (dy, j);
       end if;
+      dy_prefix := Element (pos_prefix, j);
       if read_kbd
       then
-         TextCol (lightgray);
-         GotoXY (xmin (6) + 2, ymin (6) + 1);
+         TextCol (LightGray);
+         GotoXY (Integer_32 (xmin (6) + 2), Integer_32 (ymin (6) + 1));
          if abs (dx) > resln
          then
-            --  [P2Ada]: !Help! Maybe (file,...) here
-            --  [P2Ada]: !Help! Maybe (file,...) here
-            --  [P2Ada]: !Help! Maybe (file,...) here
-            --  [P2Ada]: !Help! Maybe (file,...) here
-            Put (P2Ada_no_keyword_delta);
-            Put ("x ");
-            Put (dx, 7, 3, 0);
-            Put (dx_prefix);
-            Put ('m');
-            GotoXY (xmin (6) + 2, ymin (6));
+            PutCh (Delta_Ch);
+            PutStr ("x ");
+            PutFloat (dx, 7, 3, 0);
+            PutCh (char (dx_prefix));
+            PutCh ('m');
+            GotoXY (Integer_32 (xmin (6) + 2), Integer_32 (ymin (6)));
          else
-            GotoXY (xmin (6) + 2, ymin (6) + 1);
+            GotoXY (Integer_32 (xmin (6) + 2), Integer_32 (ymin (6) + 1));
          end if;
          if abs (dy) > resln
          then
-            --  [P2Ada]: !Help! Maybe (file,...) here
-            --  [P2Ada]: !Help! Maybe (file,...) here
-            --  [P2Ada]: !Help! Maybe (file,...) here
-            --  [P2Ada]: !Help! Maybe (file,...) here
-            Put (P2Ada_no_keyword_delta);
-            Put ("y ");
-            Put (-dy, 7, 3, 0);
-            Put (dy_prefix);
-            Put ('m');
+            PutCh (Delta_Ch);
+            PutStr ("y ");
+            PutFloat (-dy, 7, 3, 0);
+            PutCh (char (dy_prefix));
+            PutCh ('m');
          end if;
       end if;
    end dx_dyO;
-   --  * dx_dyO *
-   --  *
-   --  Get lead character to determine if part is
-   --  tline, clines, device, lumped, etc.
-   --  *
 
    function get_lead_charO (tcompt : compt) return Character is
       --  [BP2P]: Label "100001" Was "exit_label"
       Result_get_lead_charO : Character;
-      xstr : line_string;
+      xstr : Unbounded_String;
       char1 : Character;
    begin
       xstr := tcompt.all.descript;
       Delete (xstr, 1, 1);
-      char1 := xstr (1);
+      char1 := Element (xstr, 1);
       loop
-         if xstr (1) = ' '
+         if Element (xstr, 1) = ' '
          then
             Delete (xstr, 1, 1);
          end if;
-         if (xstr'Length) = 0
+         if Length (xstr) = 0
          then
             --  [BP2P]: Label "100001" Was "exit_label"
             goto LABEL_100001;
          end if;
-         char1 := xstr (1);
-         exit when xstr (1) /= ' ';
+         char1 := Element (xstr, 1);
+         exit when Element (xstr, 1) /= ' ';
       end loop;
       --  [BP2P]: Label "100001" Was "exit_label"
       --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
       <<LABEL_100001>>
-      if char1 and ('A' .. 'Z' => True, others => False)
+      if char1 >= 'A' and then char1 <= 'Z'
       then
-         char1 := Character (Character'Pos (char1) + 32);
+         char1 := To_Lower (char1);
+         --  char1 := Character (Character'Pos (char1) + 32);
       end if;
       Result_get_lead_charO := char1;
       return Result_get_lead_charO;
@@ -2029,42 +2001,44 @@ package body pfun2 is
    --  *
 
    procedure Draw_tline (tnet : net; linex, seperate : Boolean) is
-      x1, x2, y1, y2, x3, y3, x1e, y1e, x2e, y2e, i, j : Integer;
+      x1, x2, y1, y2, x3, y3, x1e, y1e, x2e, y2e : Integer;
       x1r, y1r, x2r, y2r : Long_Float;
    begin
-      x1r := tnet.all.xr - lengthxm * yii / 2.0;
-      x2r := x1r + lengthxm * (xii + yii);
-      y1r := tnet.all.yr - lengthym * xii / 2.0;
-      y2r := y1r + lengthym * (yii + xii);
-      x1 := Round (x1r / csx + xmin (1));
-      x2 := Round (x2r / csx + xmin (1));
-      x3 := Round ((x1r + x2r) / (2.0 * csx) + xmin (1));
-      y1 := Round (y1r / csy + ymin (1));
-      y2 := Round (y2r / csy + ymin (1));
-      y3 := Round ((y1r + y2r) / (2.0 * csy) + ymin (1));
+      x1r := tnet.all.xr - lengthxm * Long_Float (yii) / 2.0;
+      x2r := x1r + lengthxm * Long_Float (xii + yii);
+      y1r := tnet.all.yr - lengthym * Long_Float (xii) / 2.0;
+      y2r := y1r + lengthym * Long_Float (yii + xii);
+      x1 := Round (x1r / csx + Long_Float (xmin (1)));
+      x2 := Round (x2r / csx + Long_Float (xmin (1)));
+      x3 := Round ((x1r + x2r) / (2.0 * csx) + Long_Float (xmin (1)));
+      y1 := Round (y1r / csy + Long_Float (ymin (1)));
+      y2 := Round (y2r / csy + Long_Float (ymin (1)));
+      y3 := Round ((y1r + y2r) / (2.0 * csy) + Long_Float (ymin (1)));
       x1e := Round (tnet.all.xr / csx) + xmin (1);
       y1e := Round (tnet.all.yr / csy) + ymin (1);
-      x2e := Round ((tnet.all.xr + lengthxm * xii) / csx) + xmin (1);
-      y2e := Round ((tnet.all.yr + lengthym * yii) / csy) + ymin (1);
+      x2e := Round ((tnet.all.xr + lengthxm *
+                      Long_Float (xii)) / csx) + xmin (1);
+      y2e := Round ((tnet.all.yr + lengthym *
+                      Long_Float (yii)) / csy) + ymin (1);
       if linex
       then
-         fill_box (x1, y1, x2, y2, brown);
+         fill_box (x1, y1, x2, y2, Brown);
       else
          if x1 = x2
          then
             --  make 50 Ohms wide if width=0
-            x1 := Round (x1 - widthZ0 / (2.0 * csx));
-            x2 := Round (x2 + widthZ0 / (2.0 * csx));
+            x1 := Round (Long_Float (x1) - widthZ0 / (2.0 * csx));
+            x2 := Round (Long_Float (x2) + widthZ0 / (2.0 * csx));
          else
             if y1 = y2
             then
                --  make 50 Ohms wide if width=0
-               y1 := Round (y1 - widthZ0 / (2.0 * csy));
-               y2 := Round (y2 + widthZ0 / (2.0 * csy));
+               y1 := Round (Long_Float (y1) - widthZ0 / (2.0 * csy));
+               y2 := Round (Long_Float (y2) + widthZ0 / (2.0 * csy));
             end if;
          end if;
          --  if width<>0 i.e. Manhattan, just draw it
-         draw_box (x1, y1, x2, y2, lightblue);
+         Draw_Box (x1, y1, x2, y2, LightBlue);
          if tnet.all.com.all.typ = 'a'
          then
             --  * Make small boxes for atten terminals *
@@ -2074,33 +2048,41 @@ package body pfun2 is
       end if;
       if seperate
       then
-         x1r := (tnet.all.xr + tnet.all.com.all.con_space * yii / 2.0) /
-           csx + xmin (1);
-         y1r := (tnet.all.yr + tnet.all.com.all.con_space * xii / 2.0) /
-           csy + ymin (1);
+         x1r := (tnet.all.xr + tnet.all.com.all.con_space *
+                   Long_Float (yii) / 2.0) / csx + Long_Float (xmin (1));
+         y1r := (tnet.all.yr + tnet.all.com.all.con_space *
+                   Long_Float (xii) / 2.0) / csy + Long_Float (ymin (1));
          if not ((x1 = x2) or else (y1 = y2))
          then
-            SetCol (black);
-            Line (Round (x1r), Round (y1r), Round (x1r + lengthxm * xii / csx),
-                  Round (y1r + lengthym * yii / csy));
+            SetCol (Black);
+            Line (Integer_32 (Round (x1r)),
+                  Integer_32 (Round (y1r)),
+                  Integer_32 (Round (x1r + lengthxm *
+                      Long_Float (xii) / csx)),
+                  Integer_32 (Round (y1r + lengthym *
+                      Long_Float (yii) / csy)));
          end if;
       end if;
       --  * Write graphics character to identify part *
       --  make sure center dot is black
-      SetTextJustify (CenterText, CenterText);
-      PutPixel (x3, y3, Black);
+      SetTextJustify (centertext, centertext);
+      PutPixel (Integer_32 (x3), Integer_32 (y3), Black);
       SetCol (Black);
       for i in -1 .. 1
       loop
          for j in -1 .. 1
          loop
-            OutTextXY (x3 + i, y3 + j, tnet.all.com.all.descript (1));
+            OutTextXY (x3 + i, y3 + j,
+                       Interfaces.C.To_C
+                         ("" & Element (tnet.all.com.all.descript, 1)));
          end loop;
       end loop;
       --  shadow
       --  letter
       SetCol (LightRed);
-      OutTextXY (x3, y3, tnet.all.com.all.descript (1));
+      OutTextXY (x3, y3,
+                 Interfaces.C.To_C
+                   ("" & Element (tnet.all.com.all.descript, 1)));
    end Draw_tline;
    --  * Draw_tline *
    --  *
@@ -2114,72 +2096,96 @@ package body pfun2 is
    begin
       x1 := Round (tnet.all.xr / csx) + xmin (1);
       y1 := Round (tnet.all.yr / csy) + ymin (1);
-      x2 := Round ((tnet.all.xr + lengthxm * xii) / csx) + xmin (1);
-      y2 := Round ((tnet.all.yr + lengthym * yii) / csy) + ymin (1);
-      xt := Round (yii * lengthym / (2.0 * csx));
-      yt := Round (xii * lengthxm / (2.0 * csy));
-      x3 := Round ((x1 + x2) / 2.0);
-      y3 := Round ((y1 + y2) / 2.0);
-      SetTextJustify (CenterText, CenterText);
-      SetCol (lightblue);
-      Line (x1 - xt, y1 - yt, x1 + xt, y1 + yt);
-      Line (x1 + xt, y1 + yt, x2 + (xt / 2), y2 + (yt / 2));
-      Line (x2 + (xt / 2), y2 + (yt / 2), x2 - (xt / 2), y2 - (yt / 2));
-      Line (x2 - (xt / 2), y2 - (yt / 2), x1 - xt, y1 - yt);
+      x2 := Round ((tnet.all.xr + lengthxm * Long_Float (xii)) /
+                     csx) + xmin (1);
+      y2 := Round ((tnet.all.yr + lengthym * Long_Float (yii)) /
+                     csy) + ymin (1);
+      xt := Round (Long_Float (yii) * lengthym / (2.0 * csx));
+      yt := Round (Long_Float (xii) * lengthxm / (2.0 * csy));
+      x3 := Round (Long_Float (x1 + x2) / 2.0);
+      y3 := Round (Long_Float (y1 + y2) / 2.0);
+      SetTextJustify (centertext, centertext);
+      SetCol (LightBlue);
+      Line (Integer_32 (x1 - xt),
+            Integer_32 (y1 - yt),
+            Integer_32 (x1 + xt),
+            Integer_32 (y1 + yt));
+      Line (Integer_32 (x1 + xt),
+            Integer_32 (y1 + yt),
+            Integer_32 (x2 + (xt / 2)),
+            Integer_32 (y2 + (yt / 2)));
+      Line (Integer_32 (x2 + (xt / 2)),
+            Integer_32 (y2 + (yt / 2)),
+            Integer_32 (x2 - (xt / 2)),
+            Integer_32 (y2 - (yt / 2)));
+      Line (Integer_32 (x2 - (xt / 2)),
+            Integer_32 (y2 - (yt / 2)),
+            Integer_32 (x1 - xt),
+            Integer_32 (y1 - yt));
       SetCol (LightRed);
-      OutTextXY (x3, y3, tnet.all.com.all.descript (1));
+      OutTextXY (x3, y3,
+                 Interfaces.C.To_C
+                   ("" & Element (tnet.all.com.all.descript, 1)));
       box (x1, y1, 1);
       box (x2, y2, 1);
    end Draw_xformer;
-   --  * Draw_xformer *
-   --  *
-   --  Draw a triangle to represent a device.
-   --  *
 
    procedure Draw_device (tnet : net) is
-      --  center text for OutText
-      --  * Make small boxes for device terminals *
-      --  [P2Ada]: WITH instruction
-      --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_24.' to fields
       sx1, sy1 : Long_Float;
-      x1, x2, y1, y2, x3, y3, xt, yt, i : Integer;
+      x1, x2, y1, y2, x3, y3, xt, yt : Integer;
    begin
       x1 := Round (tnet.all.xr / csx) + xmin (1);
       y1 := Round (tnet.all.yr / csy) + ymin (1);
-      x2 := Round ((tnet.all.xr + lengthxm * xii) / csx) + xmin (1);
-      y2 := Round ((tnet.all.yr + lengthym * yii) / csy) + ymin (1);
-      xt := Round (yii * lengthym / (2.0 * csx));
-      yt := Round (xii * lengthxm / (2.0 * csy));
-      x3 := Round ((2 * x1 + x2) / 3.0);
-      y3 := Round ((2 * y1 + y2) / 3.0);
-      SetTextJustify (CenterText, CenterText);
-      SetCol (lightblue);
-      Line (x1 - xt, y1 - yt, x1 + xt, y1 + yt);
-      Line (x1 + xt, y1 + yt, x2, y2);
-      Line (x2, y2, x1 - xt, y1 - yt);
+      x2 := Round ((tnet.all.xr + lengthxm *
+                     Long_Float (xii)) / csx) + xmin (1);
+      y2 := Round ((tnet.all.yr + lengthym *
+                     Long_Float (yii)) / csy) + ymin (1);
+      xt := Round (Long_Float (yii) * lengthym / (2.0 * csx));
+      yt := Round (Long_Float (xii) * lengthxm / (2.0 * csy));
+      x3 := Round (Long_Float ((2 * x1 + x2)) / 3.0);
+      y3 := Round (Long_Float ((2 * y1 + y2)) / 3.0);
+      SetTextJustify (centertext, centertext);
+      SetCol (LightBlue);
+      Line (Integer_32 (x1 - xt),
+            Integer_32 (y1 - yt),
+            Integer_32 (x1 + xt),
+            Integer_32 (y1 + yt));
+      Line (Integer_32 (x1 + xt),
+            Integer_32 (y1 + yt),
+            Integer_32 (x2),
+            Integer_32 (y2));
+      Line (Integer_32 (x2),
+            Integer_32 (y2),
+            Integer_32 (x1 - xt),
+            Integer_32 (y1 - yt));
       SetCol (LightRed);
-      OutTextXY (x3, y3, tnet.all.com.all.descript (1));
-      declare P2Ada_Var_24 : tnet renames tnet.all;
+      OutTextXY (x3, y3,
+                 Interfaces.C.To_C
+                   ("" & Element (tnet.all.com.all.descript, 1)));
+      declare P2Ada_Var_24 : net_record renames tnet.all;
       begin
-         if number_of_con = 1
+         if P2Ada_Var_24.number_of_con = 1
          then
             box (x1, y1, 1);
          else
-            sx1 := (x2 - x1) / (number_of_con - 1);
-            sy1 := (y2 - y1) / (number_of_con - 1);
-            for i in 0 .. number_of_con - 1
+            sx1 := Long_Float ((x2 - x1) / (P2Ada_Var_24.number_of_con - 1));
+            sy1 := Long_Float ((y2 - y1) / (P2Ada_Var_24.number_of_con - 1));
+            for i in 0 .. P2Ada_Var_24.number_of_con - 1
             loop
-               box (x1 + Round (i * sx1), y1 + Round (i * sy1), 1);
+               box (x1 + Round (Long_Float (i) * sx1),
+                    y1 + Round (Long_Float (i) * sy1), 1);
             end loop;
             if tnet.all.com.all.typ = 'i'
             then
-               if number_of_con = 3
+               if P2Ada_Var_24.number_of_con = 3
                then
                   --  Yellow box at port 2
                   box (x1 + Round (sx1), y1 + Round (sy1), 4);
                else
-                  box (x1 + Round ((number_of_con - 1) * sx1), y1 +
-                         Round ((number_of_con - 1) * sy1), 4);
+                  box (x1 + Round (Long_Float (P2Ada_Var_24.number_of_con - 1)
+                       * sx1),
+                       y1 + Round (Long_Float (P2Ada_Var_24.number_of_con - 1)
+                       * sy1), 4);
                end if;
                --  Yellow box at last port
             end if;
@@ -2195,7 +2201,7 @@ package body pfun2 is
    --  *
 
    procedure Add_Coord (x1, xb, xl, y1 : Integer; just, brd : Boolean;
-                        tdes : line_string) is
+                        tdes : Unbounded_String) is
    begin
       if ccompt = null
       then
@@ -2208,67 +2214,48 @@ package body pfun2 is
       else
          ccompt := ccompt.all.next_compt;
       end if;
-      --  [P2Ada]: WITH instruction
-      --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_25.' to fields
-      declare P2Ada_Var_25 : compt renames ccompt.all;
+      declare P2Ada_Var_25 : compt_record renames ccompt.all;
       begin
-         --  x-position
-         --  length of number
-         --  amount of text
-         --  y-position
          xpt := x1;
-         xorig := x1;
-         xmax := xl;
-         x_block := xb;
-         yp := y1;
-         right := just;
-         descript := tdes;
+         P2Ada_Var_25.xorig := x1;
+         P2Ada_Var_25.xmaxl := xl;
+         P2Ada_Var_25.x_block := xb;
+         P2Ada_Var_25.yp := y1;
+         P2Ada_Var_25.right := just;
+         P2Ada_Var_25.descript := tdes;
       end;
-      --  [P2Ada]: end of WITH
    end Add_Coord;
-   --  add_coord
-   --  *
-   --  Set up parameters for Plot window.
-   --  Called by Puff_Start to initialize to blank parameters,
-   --  and by Read_Net() after reading file key.
-   --  Uses Add_Coord;
-   --  *
 
    procedure Set_Up_KeyO is
-      --  dBmax
-      --  save this position for swapping, also coord_start
-      --  dBmin
-      --  fmin
-      --  fmax
    begin
       ccompt := null;
-      Add_Coord (x_y_plot_text (1, 1), 0, 5, x_y_plot_text (1, 2), true, false,
+      Add_Coord (x_y_plot_text (1, 1), 0, 5, x_y_plot_text (1, 2), True, False,
                  s_key (1));
       dBmax_ptr := ccompt;
-      Add_Coord (x_y_plot_text (3, 1), 0, 5, x_y_plot_text (3, 2), true, false,
+      Add_Coord (x_y_plot_text (3, 1), 0, 5, x_y_plot_text (3, 2), True, False,
                  s_key (2));
-      Add_Coord (x_y_plot_text (4, 1), 0, 7, x_y_plot_text (4, 2), false,
-                 false, s_key (3));
+      Add_Coord (x_y_plot_text (4, 1), 0, 7, x_y_plot_text (4, 2), False,
+                 False, s_key (3));
       fmin_ptr := ccompt;
-      Add_Coord (x_y_plot_text (6, 1), 0, 7, x_y_plot_text (6, 2), true, false,
+      Add_Coord (x_y_plot_text (6, 1), 0, 7, x_y_plot_text (6, 2), True, False,
                  s_key (4));
-      add_coord (xmin (2), 7, 12, ymin (2), false, false, "Points " +
-                   s_key (5));
+      Add_Coord (xmin (2), 7, 12, ymin (2), False, False,
+                 "Points " & s_key (5));
       Points_compt := ccompt;
-      add_coord (xmin (2), 13, 17, ymin (2) + 1, false, false, "Smith radius "
-                 + s_key (6));
+      Add_Coord (xmin (2), 13, 17, ymin (2) + 1, False, False,
+                 "Smith radius " & s_key (6));
       rho_fac_compt := ccompt;
-      add_coord (xmin (2) + 2, 1, 3, ymin (2) + 3, false, false, 'S' +
-                   s_key (7));
+      Add_Coord (xmin (2) + 2, 1, 3, ymin (2) + 3, False, False,
+                 "S" & s_key (7));
       s_param_table (1) := ccompt;
-      add_coord (xmin (2) + 2, 1, 3, ymin (2) + 4, false, false, 'S' +
-                   s_key (8));
+      Add_Coord (xmin (2) + 2, 1, 3, ymin (2) + 4, False, False,
+                 "S" & s_key (8));
       s_param_table (2) := ccompt;
-      add_coord (xmin (2) + 2, 1, 3, ymin (2) + 5, false, false, 'S' +
-                   s_key (9));
+      Add_Coord (xmin (2) + 2, 1, 3, ymin (2) + 5, False, False,
+                 "S" & s_key (9));
       s_param_table (3) := ccompt;
-      add_coord (xmin (2) + 2, 1, 3, ymin (2) + 6, false, false, 'S' +
-                   s_key (10));
+      Add_Coord (xmin (2) + 2, 1, 3, ymin (2) + 6, False, False,
+                 "S" & s_key (10));
       s_param_table (4) := ccompt;
    end Set_Up_KeyO;
    --  *Set_Up_KeyO*
@@ -2320,35 +2307,23 @@ package body pfun2 is
       c.all.xorig := c.all.xp;
       c.all.yp := ymin (2) + 6;
    end Update_KeyO_locations;
-   --  *Set_Up_KeyO*
-   --  *
-   --  Set up parameters for BOARD window.
-   --  Called by Puff_Start to initialize blank parameters,
-   --  and by Read_Net() after Read_Board.
-   --  Uses Add_Coord;
-   --  *
 
    procedure Set_Up_Board is
-      --  zd norm impedance
-      --  fd design_freq
-      --  er dielectric const
-      --  h substrate thick
-      --  s board size
-      --  c conn separation
    begin
       ccompt := null;
-      add_coord (xmin (4), 4, 16, ymin (4), false, true, "zd  " +
-                   s_board (1, 1) + ' ' + s_board (1, 2) + Omega);
-      add_coord (xmin (4), 4, 16, ymin (4) + 1, false, true, "fd  " +
-                   s_board (2, 1) + ' ' + s_board (2, 2) + "Hz");
-      add_coord (xmin (4), 4, 16, ymin (4) + 2, false, true, "er  " +
-                   s_board (3, 1));
-      add_coord (xmin (4), 4, 16, ymin (4) + 3, false, true, "h   " +
-                   s_board (4, 1) + ' ' + s_board (4, 2) + 'm');
-      add_coord (xmin (4), 4, 16, ymin (4) + 4, false, true, "s   " +
-                   s_board (5, 1) + ' ' + s_board (5, 2) + 'm');
-      add_coord (xmin (4), 4, 16, ymin (4) + 5, false, true, "c   " +
-                   s_board (6, 1) + ' ' + s_board (6, 2) + 'm');
+      Add_Coord (xmin (4), 4, 16, ymin (4), False, True,
+                 "zd  " & s_board (1, 1) & ' ' & s_board (1, 2) &
+                   Character (Omega));
+      Add_Coord (xmin (4), 4, 16, ymin (4) + 1, False, True,
+                 "fd  " & s_board (2, 1) & ' ' & s_board (2, 2) & "Hz");
+      Add_Coord (xmin (4), 4, 16, ymin (4) + 2, False, True,
+                 "er  " & s_board (3, 1));
+      Add_Coord (xmin (4), 4, 16, ymin (4) + 3, False, True,
+                 "h   " & s_board (4, 1) & ' ' & s_board (4, 2) & 'm');
+      Add_Coord (xmin (4), 4, 16, ymin (4) + 4, False, True,
+                 "s   " & s_board (5, 1) & ' ' & s_board (5, 2) & 'm');
+      Add_Coord (xmin (4), 4, 16, ymin (4) + 5, False, True,
+                 "c   " & s_board (6, 1) & ' ' & s_board (6, 2) & 'm');
    end Set_Up_Board;
    --  *Set_Up_Board*
    --  *
@@ -2363,7 +2338,7 @@ package body pfun2 is
    procedure Fresh_Dimensions is
       tcompt : compt;
    begin
-      csy := bmax / (ymax (1) - ymin (1));
+      csy := bmax / Long_Float (ymax (1) - ymin (1));
       csx := csy * yf;
       Manh_length := 0.1 * bmax;
       Manh_width := 0.05 * bmax;
@@ -2377,18 +2352,15 @@ package body pfun2 is
       else
          widthZ0 := widtht (Z0) + artwork_cor;
       end if;
-      --  * Artwork correction added ^ *
-      --  artwork dimen
-      --  screen dimen
-      --  * (Global Var) Sheet resistance of metal at design_freq *
-      --  * (Global Var) Wavelength in mm at design freq. *
       pwidthxZ02 := Round (widthZ0 * 0.5 / psx);
       pwidthyZ02 := Round (widthZ0 * 0.5 / psy);
       cwidthxZ02 := Round (widthZ0 * 0.5 / csx);
       cwidthyZ02 := Round (widthZ0 * 0.5 / csy);
-      Rs_at_fd := Sqrt (Pi * design_freq * Eng_Prefix (freq_prefix) * Mu_0 /
+      Rs_at_fd := Sqrt (Pi * design_freq *
+                          Eng_Prefix (Character (freq_prefix)) * Mu_0 /
                           conductivity);
-      Lambda_fd := c_in_mm / (design_freq * Eng_Prefix (freq_prefix));
+      Lambda_fd := c_in_mm / (design_freq *
+                          Eng_Prefix (Character (freq_prefix)));
       tcompt := null;
       loop
          --  * Force parsing of each part *
@@ -2414,10 +2386,19 @@ package body pfun2 is
       then
          x1 := Round (xr / csx) + xmin (1);
          y1 := Round (yr / csy) + ymin (1);
-         SetCol (yellow);
-         Line (x1 - 4, y1, x1 + 4, y1);
-         Line (x1 - 2, y1 + 2, x1 + 2, y1 + 2);
-         Line (x1 - 1, y1 + 4, x1 + 1, y1 + 4);
+         SetCol (Yellow);
+         Line (Integer_32 (x1 - 4),
+               Integer_32 (y1),
+               Integer_32 (x1 + 4),
+               Integer_32 (y1));
+         Line (Integer_32 (x1 - 2),
+               Integer_32 (y1 + 2),
+               Integer_32 (x1 + 2),
+               Integer_32 (y1 + 2));
+         Line (Integer_32 (x1 - 1),
+               Integer_32 (y1 + 4),
+               Integer_32 (x1 + 1),
+               Integer_32 (y1 + 4));
       end if;
       --  read_kbd
    end draw_groundO;
@@ -2436,7 +2417,7 @@ package body pfun2 is
    --  etc...
    --  end;
 
-   function Look_BackO return boolean is
+   function look_backO return Boolean is
       Result_Look_BackO : Boolean;
       tcon, scon, mtcon, mscon : conn;
       x1, x2, y1, y2, cs, cm : Long_Float;
@@ -2444,7 +2425,7 @@ package body pfun2 is
       tnet : net;
       d2 : Integer;
    begin
-      look_backO := False;
+      Result_Look_BackO := False;
       coupler_found := False;
       if cnet /= null
       then
@@ -2461,16 +2442,16 @@ package body pfun2 is
                end if;
                if tcon.all.mate /= null
                then
-                  if tcon.all.mate.all.net.all.com.all.typ = 'c'
+                  if tcon.all.mate.all.the_net.all.com.all.typ = 'c'
                   then
                      --  if cline to cline
                      --  find averages of connector separation between old and
                      --  new
-                     cs := (tcon.all.mate.all.net.all.com.all.con_space +
+                     cs := (tcon.all.mate.all.the_net.all.com.all.con_space +
                               compt1.all.con_space) / 2.0;
-                     cm := (tcon.all.mate.all.net.all.com.all.con_space -
+                     cm := (tcon.all.mate.all.the_net.all.com.all.con_space -
                               compt1.all.con_space) / 2.0;
-                     d2 := tcon.all.dir;
+                     d2 := Integer (tcon.all.dir);
                      mtcon := tcon.all.mate;
                      case tcon.all.mate.all.conn_no is
                         --  look at conns old clines
@@ -2479,10 +2460,11 @@ package body pfun2 is
                            mscon := mtcon.all.next_con.all.next_con;
                         when 3 =>
                            --  con 3 -> con 1
-                           mscon := mtcon.all.net.all.con_start;
+                           mscon := mtcon.all.the_net.all.con_start;
                         when 4 =>
                            --  con 4 -> con 2
-                           mscon := mtcon.all.net.all.con_start.all.next_con;
+                           mscon := mtcon.all.the_net.all.con_start.all
+                             .next_con;
                         when others =>
                            --  [P2Ada]: no otherwise / else in Pascal
                            null;
@@ -2495,7 +2477,7 @@ package body pfun2 is
                      mate_node (1) := cnet;
                      x1 := mate_node (1).all.xr;
                      y1 := mate_node (1).all.yr;
-                     Mate_Node (3) := scon.all.net;
+                     mate_node (3) := scon.all.the_net;
                      x2 := mate_node (3).all.xr;
                      y2 := mate_node (3).all.yr;
                      coupler_found := True;
@@ -2517,12 +2499,12 @@ package body pfun2 is
                         when 2 =>
                            ym := ym - cs;
                            tnet := mate_node (1);
-                           Mate_Node (1) := Mate_Node (3);
+                           mate_node (1) := mate_node (3);
                            mate_node (3) := tnet;
-                           look_backO := True;
+                           Result_Look_BackO := True;
                         when 4 =>
                            ym := ym - cm;
-                           look_backO := True;
+                           Result_Look_BackO := True;
                         when 8 =>
                            if d2 = 2
                            then
@@ -2542,12 +2524,12 @@ package body pfun2 is
                         when 4 =>
                            ym := ym + cs;
                            tnet := mate_node (1);
-                           Mate_Node (1) := Mate_Node (3);
+                           mate_node (1) := mate_node (3);
                            mate_node (3) := tnet;
-                           look_backO := True;
+                           Result_Look_BackO := True;
                         when 2 =>
                            ym := ym + cm;
-                           look_backO := True;
+                           Result_Look_BackO := True;
                         when 1 =>
                            if d2 = 4
                            then
@@ -2571,12 +2553,12 @@ package body pfun2 is
                         when 8 =>
                            xm := xm - cs;
                            tnet := mate_node (1);
-                           Mate_Node (1) := Mate_Node (3);
+                           mate_node (1) := mate_node (3);
                            mate_node (3) := tnet;
-                           look_backO := True;
+                           Result_Look_BackO := True;
                         when 1 =>
                            xm := xm - cm;
-                           look_backO := True;
+                           Result_Look_BackO := True;
                         when 2 =>
                            if d2 = 8
                            then
@@ -2596,12 +2578,12 @@ package body pfun2 is
                         when 1 =>
                            xm := xm + cs;
                            tnet := mate_node (1);
-                           Mate_Node (1) := Mate_Node (3);
+                           mate_node (1) := mate_node (3);
                            mate_node (3) := tnet;
-                           look_backO := True;
+                           Result_Look_BackO := True;
                         when 8 =>
                            xm := xm + cm;
-                           look_backO := True;
+                           Result_Look_BackO := True;
                         when 4 =>
                            if d2 = 1
                            then
@@ -2626,52 +2608,6 @@ package body pfun2 is
       --  if compt1
       return Result_Look_BackO;
    end look_backO;
-   --  look_backO
-
-   --  Determine screen and artwork layout variables.
-   --  Called in Read_Board().
-   --  Uses only global variables.
-   --  Must be called after any change to bmax (s),z0 (zd).
-   --  Sets all parts to ^.changed=true, forcing parsing
-   --  therefore, call after changes to fd,er,h
-   --  *
-   procedure Fresh_Dimensions is
-      tcompt : compt;
-   begin
-      csy := bmax / Long_Float ((ymax (1) - ymin (1)));
-      csx := csy * yf;
-      Manh_length := 0.1 * bmax;
-      Manh_width := 0.05 * bmax;
-      if abs (con_sep) > bmax
-      then
-         con_sep := bmax;
-      end if;
-      if Manhattan_Board
-      then
-         widthZ0 := Manh_width;
-      else
-         widthZ0 := widtht (Z0) + artwork_cor;
-      end if;
-      pwidthxZ02 := Round (widthZ0 * 0.5 / psx);
-      pwidthyZ02 := Round (widthZ0 * 0.5 / psy);
-      cwidthxZ02 := Round (widthZ0 * 0.5 / csx);
-      cwidthyZ02 := Round (widthZ0 * 0.5 / csy);
-      Rs_at_fd := Sqrt (Pi * design_freq * Eng_prefix (freq_prefix) * Mu_0 /
-                          conductivity);
-      Lambda_fd := c_in_mm / (design_freq * Eng_Prefix (freq_prefix));
-      tcompt := null;
-      loop
-         --  * Force parsing of each part *
-         if tcompt = null
-         then
-            tcompt := part_start;
-         else
-            tcompt := tcompt.next_compt;
-         end if;
-         tcompt.changed := True;
-         exit when tcompt.next_compt = null;
-      end loop;
-   end Fresh_Dimensions;
 
    procedure super_stripline (tcompt : compt) is
       W, b, x, m, W_prime, b_t_W, W_over_b_t, delta_W_b_t, A_fac, Z_0_t, Q_fac,
@@ -2686,40 +2622,36 @@ package body pfun2 is
          W := tcompt.all.width;
          b := substrate_h;
          x := metal_thickness / b;
-         m := 2 / (1.0 + 2 * x / (3 * (1.0 - x)));
+         m := 2.0 / (1.0 + 2.0 * x / (3.0 * (1.0 - x)));
          delta_W_b_t := x * (1.0 - 0.5 * Log (((x / (2.0 - x)) ** 2) +
-                               exp (m * Log (0.0796 * x /
+                               Exp (m * Log (0.0796 * x /
                                  ((W / b) + 1.1 * x))))) / (Pi * (1.0 - x));
          W_over_b_t := (W / (b - metal_thickness)) + delta_W_b_t;
          W_prime := (b - metal_thickness) * W_over_b_t;
-         b_t_W := 1 / W_over_b_t;
-         A_fac := Log (1.0 + (4 * b_t_W / Pi) * ((8 * b_t_w / Pi) +
-                         sqrt (((8 * b_t_w / Pi) ** 2) + 6.27))) / Pi;
-         Z_0_t := 30 * Pi * A_fac / sqrt (er);
-         Q_fac := sqrt (1.0 + 6.27 * ((Pi * W_over_b_t / 8) ** 2));
-         partial_Z_w := 30.0 * (3.135 / Q_fac - (1 + Q_fac - 0.303 / Q_fac) *
+         b_t_W := 1.0 / W_over_b_t;
+         A_fac := Log (1.0 + (4.0 * b_t_W / Pi) * ((8.0 * b_t_W / Pi) +
+                         Sqrt (((8.0 * b_t_W / Pi) ** 2) + 6.27))) / Pi;
+         Z_0_t := 30.0 * Pi * A_fac / Sqrt (er);
+         Q_fac := Sqrt (1.0 + 6.27 * ((Pi * W_over_b_t / 8.0) ** 2));
+         partial_Z_w := 30.0 * (3.135 / Q_fac - (1.0 + Q_fac - 0.303 / Q_fac) *
                                 ((8.0 / (Pi * W_over_b_t)) ** 2)) /
-           (exp (Pi * A_fac) * W_prime);
-         log_term := 1.0 + 2 * W_over_b_t - (3 * x / (2.0 - x) +
+           (Exp (Pi * A_fac) * W_prime);
+         log_term := 1.0 + 2.0 * W_over_b_t - (3.0 * x / (2.0 - x) +
                                                Log (x / (2.0 - x))) / Pi;
          declare P2Ada_Var_8 : compt renames tcompt;
          begin
             --  nepers/mm
-            alpha_c := -Rs_at_fd * partial_Z_w * log_term /
-              (120 * Pi * Z_0_t);
-            zed := Z_0_t;
+            P2Ada_Var_8.alpha_c := -Rs_at_fd * partial_Z_w * log_term /
+              (120.0 * Pi * Z_0_t);
+            P2Ada_Var_8.zed := Z_0_t;
          end;
          --  [P2Ada]: end of WITH
       end if;
-      --  if t>0
-      --  Add dielectric losses, despite metal thickness
-      --  [P2Ada]: WITH instruction
-      --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_9.' to fields
-      declare P2Ada_Var_9 : compt renames tcompt.all;
+      declare P2Ada_Var_9 : compt_record renames tcompt.all;
       begin
          --  nepers/mm
-         super := true;
-         alpha_d := Pi * sqrt (er) * loss_tangent / lambda_fd;
+         P2Ada_Var_9.super := True;
+         P2Ada_Var_9.alpha_d := Pi * Sqrt (er) * loss_tangent / Lambda_fd;
       end;
       --  [P2Ada]: end of WITH
    end super_stripline;
@@ -2733,9 +2665,9 @@ package body pfun2 is
          Result_a : Long_Float;
          a_int : Long_Float;
       begin
-            a_int := 1.0 + Log ((exp (4.0 * Log (u)) + ((u / 52.0) ** 2.0)) /
-                                (exp (4.0 * Log (u)) + 0.432)) / 49.0;
-         Result_a := a_int + Log (1.0 + exp (3 * Log (u / 18.1))) / 18.7;
+            a_int := 1.0 + Log ((Exp (4.0 * Log (u)) + ((u / 52.0) ** 2.0)) /
+                                (Exp (4.0 * Log (u)) + 0.432)) / 49.0;
+         Result_a := a_int + Log (1.0 + Exp (3.0 * Log (u / 18.1))) / 18.7;
          return Result_a;
       end a;
       --  *********************************
@@ -2743,56 +2675,44 @@ package body pfun2 is
       function e_e (u : Long_Float) return Long_Float is
          Result_e_e : Long_Float;
       begin
-         Result_e_e := (er + 1.0) / 2 + ((er - 1.0) / 2) *
-           exp (-1.0 * a (u) * b * Log (1.0 + 10 / u));
+         Result_e_e := (er + 1.0) / 2.0 + ((er - 1.0) / 2.0) *
+           Exp (-1.0 * a (u) * b * Log (1.0 + 10.0 / u));
          return Result_e_e;
       end e_e;
       --  *********************************
    begin
       u_in := tcompt.all.width / substrate_h;
-      b := 0.564 * exp (0.053 * Log ((er - 0.9) / (er + 3.0)));
+      b := 0.564 * Exp (0.053 * Log ((er - 0.9) / (er + 3.0)));
       t_n := metal_thickness / substrate_h;
       if t_n > 0.0
       then
-            delta_ul := (t_n / Pi) * Log (1.0 + (4 * exp (1.0)) /
-                                          (t_n * ((cosh (sqrt (6.517 * u_in)) /
-                                          sinh (sqrt (6.517 * u_in))) ** 2)));
-         delta_ur := 0.5 * (1.0 + 1.0 / (cosh (sqrt (er - 1.0)))) * delta_ul;
+         delta_ul := (t_n / Pi) *
+           Log (1.0 + (4.0 * Exp (1.0)) / (t_n * ((Cosh (Sqrt (6.517 * u_in)) /
+                Sinh (Sqrt (6.517 * u_in))) ** 2)));
+         delta_ur := 0.5 * (1.0 + 1.0 / (Cosh (Sqrt (er - 1.0)))) * delta_ul;
          ul := u_in + delta_ul;
          ur := u_in + delta_ur;
       else
          ul := u_in;
          ur := u_in;
       end if;
-      --  * For ms_dispersion, compute value for zed_S_e0 from
-      --  equivalent zero thickness stripline with b=2h.
-      --  Double the value obtained from the formulas with b=2h.
-      --  Use super_stripline formulas with t=0, b=2*h *
-      --  [P2Ada]: WITH instruction
-      --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_7.' to fields
-      Z_0 := Hammerstad_Z (ur) / sqrt (e_e (ur));
+      Z_0 := Hammerstad_Z (ur) / Sqrt (e_e (ur));
       e_eff := e_e (ur) * ((Hammerstad_Z (ul) / Hammerstad_Z (ur)) ** 2);
-      b_t_W := 2 / u_in;
-         A_fac := Log (1.0 + (4 * b_t_W / Pi) * ((8 * b_t_w / Pi) +
-                         sqrt (((8 * b_t_w / Pi) ** 2) + 6.27)));
-      Z_0_t := 60 * A_fac / sqrt (er);
-      declare P2Ada_Var_7 : compt renames tcompt.all;
+      b_t_W := 2.0 / u_in;
+         A_fac := Log (1.0 + (4.0 * b_t_W / Pi) * ((8.0 * b_t_W / Pi) +
+                         Sqrt (((8.0 * b_t_W / Pi) ** 2) + 6.27)));
+      Z_0_t := 60.0 * A_fac / Sqrt (er);
+      declare P2Ada_Var_7 : compt_record renames tcompt.all;
       begin
-         --  nepers/mm
-         --  nepers/mm
-         --  replace with new zed
-         --  save f=0 value for ms_dispersion
-         --  save value here for ms_dispersion
-         --  save for tline and ms_dispersion use
-         --  new length
-         alpha_c := ms_alpha_c (tcompt.all.width, Z_0, e_eff);
-         alpha_d := ms_alpha_d (e_eff);
-         zed := Z_0;
-         zed_e0 := Z_0;
-         zed_S_e0 := Z_0_t;
-         e_eff_e0 := e_eff;
-         wavelength := lngth0 * sqrt (e_eff) / lambda_fd;
-         super := true;
+         P2Ada_Var_7.alpha_c := ms_alpha_c (tcompt.all.width, Z_0, e_eff);
+         P2Ada_Var_7.alpha_d := ms_alpha_d (e_eff);
+         P2Ada_Var_7.zed := Z_0;
+         P2Ada_Var_7.zed_e0 := Z_0;
+         P2Ada_Var_7.zed_S_e0 := Z_0_t;
+         P2Ada_Var_7.e_eff_e0 := e_eff;
+         P2Ada_Var_7.wavelength := P2Ada_Var_7.lngth0 *
+           Sqrt (e_eff) / Lambda_fd;
+         P2Ada_Var_7.super := True;
       end;
       --  [P2Ada]: end of WITH
    end super_microstrip;
@@ -2801,55 +2721,395 @@ package body pfun2 is
       --  F4 = f*h in units of GHz-cm (freq normalized to board thickness
       u_in, P, P1, P2, P3, P4, F4, ere0, ere_f : Long_Float;
    begin
-      F4 := substrate_h * freq * Eng_Prefix (freq_prefix) / 1.0e+10;
-      if F4 > 25
+      F4 := substrate_h * freq *
+        Eng_Prefix (Character (freq_prefix)) / 1.0e+10;
+      if F4 > 25.0
       then
-         --  ! Unstable, substitute asymptotic values
-         --  [P2Ada]: WITH instruction
-         --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_1.' to fields
-         declare P2Ada_Var_1 : compt renames tcompt.all;
+         declare P2Ada_Var_1 : compt_record renames tcompt.all;
          begin
-            zed := zed_S_e0;
-            wavelength := lngth0 * sqrt (er) / lambda_fd;
+            P2Ada_Var_1.zed := P2Ada_Var_1.zed_S_e0;
+            P2Ada_Var_1.wavelength := P2Ada_Var_1.lngth0 *
+              Sqrt (er) / Lambda_fd;
          end;
          --  [P2Ada]: end of WITH
       else
          if F4 > 0.0
          then
-            --  from advanced model super_microstrip
-            --  [P2Ada]: WITH instruction
-            --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_2.' to fields
             u_in := tcompt.all.width / substrate_h;
             ere0 := tcompt.all.e_eff_e0;
-            P1 := 0.27488 + (0.6315 + 0.525 / exp (20 *
+            P1 := 0.27488 + (0.6315 + 0.525 / Exp (20.0 *
                                Log (1.0 + 0.157 * F4))) * u_in - 0.065683 *
-                               exp (-8.7513 * u_in);
-            P2 := 0.33622 * (1.0 - exp (-0.03442 * er));
-            P3 := 0.0363 * exp (-4.6 * u_in) * (1.0 - exp (-1.0 *
-                               exp (4.97 * Log (F4 / 3.87))));
-            P4 := 1.0 + 2.751 * (1.0 - exp (-1.0 *
-                               exp (8 * Log (er / 15.916))));
-            P := P1 * P2 * exp (1.5763 * Log ((0.1844 + P3 * P4) * 10 * F4));
+                               Exp (-8.7513 * u_in);
+            P2 := 0.33622 * (1.0 - Exp (-0.03442 * er));
+            P3 := 0.0363 * Exp (-4.6 * u_in) * (1.0 - Exp (-1.0 *
+                               Exp (4.97 * Log (F4 / 3.87))));
+            P4 := 1.0 + 2.751 * (1.0 - Exp (-1.0 *
+                               Exp (8.0 * Log (er / 15.916))));
+            P := P1 * P2 * Exp (1.5763 * Log ((0.1844 + P3 * P4) * 10.0 * F4));
             ere_f := Disperse_f (er, ere0, P);
-            declare P2Ada_Var_2 : compt renames tcompt.all;
+            declare P2Ada_Var_2 : compt_record renames tcompt.all;
             begin
-               zed := Disperse_f (zed_S_e0, zed_e0, P);
-               wavelength := lngth0 * sqrt (ere_f) / lambda_fd;
+               P2Ada_Var_2.zed := Disperse_f (P2Ada_Var_2.zed_S_e0,
+                                              P2Ada_Var_2.zed_e0, P);
+               P2Ada_Var_2.wavelength := P2Ada_Var_2.lngth0 *
+                 Sqrt (ere_f) / Lambda_fd;
             end;
-            --  [P2Ada]: end of WITH
-            --  F4=0
-            --  [P2Ada]: WITH instruction
-            --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_3.' to fields
          else
-            declare P2Ada_Var_3 : compt renames tcompt.all;
+            declare P2Ada_Var_3 : compt_record renames tcompt.all;
             begin
                --  reset dc values if a re-sweep w/o parsing
-               zed := zed_e0;
-               wavelength := lngth0 * sqrt (e_eff_e0) / lambda_fd;
+               P2Ada_Var_3.zed := P2Ada_Var_3.zed_e0;
+               P2Ada_Var_3.wavelength := P2Ada_Var_3.lngth0 *
+                 Sqrt (P2Ada_Var_3.e_eff_e0) / Lambda_fd;
             end;
             --  [P2Ada]: end of WITH
          end if;
       end if;
    end ms_dispersion;
+
+   procedure super_cl_stripline (tcompt : compt;
+                                 widthc, spacec : Long_Float) is
+      W, S, b, t, theta_fac, C_f, A_e, A_o, Z_oe, Z_oo, C_ff,
+                    A_eo, Rs_prop, A_c_int, A_co_int : Long_Float;
+   begin
+      if metal_thickness > 0.0
+      then
+         --  * Z calculations -- do not function for t=0 *
+         --  * alpha calculations  :  units are nepers/mm  *
+         --  break this up to prevent stack overflow
+         --  [P2Ada]: WITH instruction
+         --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_10.' to fields
+         W := widthc * substrate_h;
+         S := spacec * substrate_h;
+         b := substrate_h;
+         t := metal_thickness;
+         theta_fac := Pi * S / (2.0 * b);
+         C_f := 2.0 * Log ((2.0 * b - t) / (b - t)) - (t / b) *
+           Log (t * (2.0 * b - t) / ((b - t) ** 2));
+         A_e := 1.0 + Log (1.0 + Sinh (theta_fac) /
+           Cosh (theta_fac)) / Log (2.0);
+         A_o := 1.0 + Log (1.0 + Cosh (theta_fac) / Sinh (theta_fac)) /
+           Log (2.0);
+         Z_oe := 30.0 * Pi * (b - t) / (Sqrt (er) * (W + b * C_f * A_e /
+                                        (2.0 * Pi)));
+         Z_oo := 30.0 * Pi * (b - t) / (Sqrt (er) * (W + b * C_f * A_o /
+                                        (2.0 * Pi)));
+         C_ff := Log ((2.0 * b - t) / (b - t)) + 0.5 * Log (t * (2.0 * b - t) /
+                                                            ((b - t) ** 2));
+         A_eo := C_f * (-1.0 + S / b) / (4.0 * Log (2.0) * (Sinh (theta_fac) +
+                                            Cosh (theta_fac)));
+         Rs_prop := Rs_at_fd * Sqrt (er) / (3600.0 * ((Pi) ** 2) * (b - t));
+         A_c_int := 1.0 - (A_e * C_ff / Pi) + (A_eo / Cosh (theta_fac));
+         A_co_int := 1.0 - (A_o * C_ff / Pi) - (A_eo / Sinh (theta_fac));
+         declare P2Ada_Var_10 : compt_record renames tcompt.all;
+         begin
+            P2Ada_Var_10.zed := Z_oe;
+            P2Ada_Var_10.zedo := Z_oo;
+            P2Ada_Var_10.alpha_c := Rs_prop *
+              (60.0 * Pi + Z_oe * Sqrt (er) * A_c_int);
+            P2Ada_Var_10.alpha_co := Rs_prop *
+              (60.0 * Pi + Z_oo * Sqrt (er) * A_co_int);
+         end;
+      end if;
+      declare P2Ada_Var_11 : compt_record renames tcompt.all;
+      begin
+         P2Ada_Var_11.super := True;
+         P2Ada_Var_11.alpha_d := Pi * Sqrt (er) * loss_tangent / Lambda_fd;
+         P2Ada_Var_11.alpha_do := P2Ada_Var_11.alpha_d;
+      end;
+      --  [P2Ada]: end of WITH
+   end super_cl_stripline;
+
+   procedure super_cl_microstrip (tcompt : compt;
+                                  widthc, spacec : Long_Float) is
+      W, S, g, W_over_h, B_fac, delta_W, delta_t, e_eff0, u, a, b, v, b_o, c_o,
+      d_o, e_effe0, e_effo0, Z_L_0, Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8, Q9, Q10,
+      Z_Le_0, Z_Lo_0, theta_fac, C_f, A_o, A_e, Z_oo, Z_oe,
+      K_loss : Long_Float;
+   begin
+      W_over_h := widthc;
+      g := spacec;
+      S := spacec * substrate_h;
+      W := widthc * substrate_h;
+      if metal_thickness > 0.0
+      then
+         if W_over_h < 0.1592
+         then
+            B_fac := 2.0 * Pi * W;
+         else
+            B_fac := substrate_h;
+         end if;
+         --  [P2Ada]: WITH instruction
+         --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_12.' to fields
+         delta_W := metal_thickness * (1.0 + Log (2.0 * B_fac /
+                                         metal_thickness)) / Pi;
+         delta_t := metal_thickness / (er * g);
+         declare P2Ada_Var_12 : compt_record renames tcompt.all;
+         begin
+            P2Ada_Var_12.u_even := (W + delta_W * (1.0 - 0.5 *
+                         Exp (-0.69 * delta_W / delta_t))) / substrate_h;
+            P2Ada_Var_12.u_odd := P2Ada_Var_12.u_even + delta_t / substrate_h;
+            P2Ada_Var_12.g_fac := g;
+         end;
+      else
+         declare P2Ada_Var_13 : compt_record renames tcompt.all;
+         begin
+            P2Ada_Var_13.u_even := W_over_h;
+            P2Ada_Var_13.u_odd := P2Ada_Var_13.u_even;
+            P2Ada_Var_13.g_fac := g;
+         end;
+         --  [P2Ada]: end of WITH
+      end if;
+      u := W_over_h;
+      a := 1.0 + Log ((Exp (4.0 * Log (u)) + ((u / 52.0) ** 2)) /
+                      (Exp (4.0 * Log (u)) + 0.432)) / 49.0;
+      a := a + Log (1.0 + Exp (3.0 * Log (u / 18.1))) / 18.7;
+      b := 0.564 * Exp (0.053 * Log ((er - 0.9) / (er + 3.0)));
+      e_eff0 := (er + 1.0) / 2.0 + ((er - 1.0) / 2.0) *
+        Exp (-a * b * Log (1.0 + 10.0 / u));
+      u := tcompt.all.u_even;
+      v := u * (20.0 + ((g) ** 2)) / (10.0 + ((g) ** 2)) + g * Exp (-g);
+      a := 1.0 + (Log ((Exp (4.0 * Log (v)) + ((v / 52.0) ** 2)) /
+        (Exp (4.0 * Log (v)) + 0.432)) / 49.0);
+      a := a + (Log (1.0 + Exp (3.0 * Log (v / 18.1))) / 18.7);
+      e_effe0 := 0.5 * (er + 1.0) + 0.5 * (er - 1.0) *
+        Exp (-a * b * Log (1.0 + 10.0 / v));
+      u := tcompt.all.u_odd;
+      d_o := 0.593 + 0.694 * Exp (-0.562 * u);
+      b_o := 0.747 * er / (0.15 + er);
+      c_o := b_o - (b_o - 0.207) * Exp (-0.414 * u);
+      a := 0.7287 * (e_eff0 - 0.5 * (er + 1.0)) * (1.0 - Exp (-0.179 * u));
+      e_effo0 := (0.5 * (er + 1.0) + a - e_eff0) *
+        Exp (-c_o * Exp (d_o * Log (g))) + e_eff0;
+      u := tcompt.all.u_even;
+      Z_L_0 := Hammerstad_Z (u) / Sqrt (e_eff0);
+      Q1 := 0.8695 * Exp (0.194 * Log (u));
+      Q2 := 1.0 + (0.7519 * g) + (0.189 * Exp (2.31 * Log (g)));
+      Q3 := 0.1975 + Exp (-0.387 * Log (16.6 + Exp (6.0 * Log (8.4 / g))));
+      Q3 := Q3 + (Log (Exp (10.0 * Log (g)) / (1.0 + Exp (10.0 *
+                    Log (g / 3.4)))) / 241.0);
+      Q4 := (2.0 * Q1 / Q2) * 1.0 / (Exp (-g) * Exp (Q3 * Log (u)) + (2.0 -
+                                     Exp (-g)) * Exp (-Q3 * Log (u)));
+      Z_Le_0 := Z_L_0 * Sqrt (e_eff0 / e_effe0) /
+        (1.0 - (Z_L_0 / (120.0 * Pi)) * Sqrt (e_eff0) * Q4);
+      u := tcompt.all.u_odd;
+      Z_L_0 := Hammerstad_Z (u) / Sqrt (e_eff0);
+      Q5 := 1.794 + 1.14 * Log (1.0 + 0.638 / (g + 0.517 *
+                                  Exp (2.43 * Log (g))));
+      Q6 := 0.2305 + Log (
+                          Exp (10.0 * Log (g)) / (1.0 +
+                          Exp (10.0 * Log (g / 5.8)))) / 281.3 +
+                          Log (1.0 + 0.598 * Exp (1.154 * Log (g))) / 5.1;
+      Q7 := (10.0 + 190.0 * ((g) ** 2)) / (1.0 + 82.3 * Exp (3.0 * Log (g)));
+      Q8 := -6.5 - 0.95 * Log (g) - Exp (5.0 * Log (g / 0.15));
+      if Q8 < -50.0
+      then
+         Q8 := 0.0;
+      else
+         Q8 := Exp (Q8);
+      end if;
+      Q9 := Log (Q7) * (Q8 + 1.00 / 16.5);
+      Q10 := (Q2 * Q4 - Q5 * Exp (Log (u) * Q6 * Exp (-Q9 * Log (u)))) / Q2;
+      Z_Lo_0 := Z_L_0 * Sqrt (e_eff0 / e_effo0) /
+        (1.0 - (Z_L_0 / (120.0 * Pi)) * Sqrt (e_eff0) * Q10);
+      b := 2.0 * substrate_h;
+      theta_fac := Pi * S / (2.0 * b);
+      C_f := 2.0 * Log (2.0);
+      A_e := 1.0 + Log (1.0 + Sinh (theta_fac) / Cosh (theta_fac)) / Log (2.0);
+      A_o := 1.0 + Log (1.0 + Cosh (theta_fac) / Sinh (theta_fac)) / Log (2.0);
+      Z_oe := 60.0 * Pi * b / (Sqrt (er) * (W + b * C_f * A_e / (2.0 * Pi)));
+      Z_oo := 60.0 * Pi * b / (Sqrt (er) * (W + b * C_f * A_o / (2.0 * Pi)));
+      K_loss := Exp (-1.2 * Exp (0.7 * Log ((Z_Lo_0 + Z_Le_0) /
+                     (240.0 * Pi))));
+      declare P2Ada_Var_14 : compt_record renames tcompt.all;
+      begin
+         P2Ada_Var_14.alpha_c := Rs_at_fd * K_loss /
+           (Z_Le_0 * P2Ada_Var_14.u_even * substrate_h);
+         P2Ada_Var_14.alpha_co := Rs_at_fd * K_loss /
+           (Z_Lo_0 * P2Ada_Var_14.u_odd * substrate_h);
+         P2Ada_Var_14.alpha_d := ms_alpha_d (e_effe0);
+         P2Ada_Var_14.alpha_do := ms_alpha_d (e_effo0);
+         P2Ada_Var_14.zed := Z_Le_0;
+         P2Ada_Var_14.zed_e0 := Z_Le_0;
+         P2Ada_Var_14.zedo := Z_Lo_0;
+         P2Ada_Var_14.zed_o0 := Z_Lo_0;
+         P2Ada_Var_14.zed_S_e0 := Z_oe;
+         P2Ada_Var_14.zed_S_o0 := Z_oo;
+         P2Ada_Var_14.e_eff_e0 := e_effe0;
+         P2Ada_Var_14.e_eff_o0 := e_effo0;
+         P2Ada_Var_14.super := True;
+      end;
+      --  [P2Ada]: end of WITH
+   end super_cl_microstrip;
+
+   procedure ms_cl_dispersion (tcompt : compt) is
+      --  f_n = f*h in units of GHz-mm (freq normalized to board thickness)
+      u, g, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10, P11, P12, P13, P14, P15,
+      f_n, F_o_f, F_e_f, ere_e_f, ere_o_f : Long_Float;
+   begin
+      f_n := substrate_h * freq *
+        Eng_Prefix (Character (freq_prefix)) / 1.0e+9;
+      if f_n > 225.0
+      then
+         declare P2Ada_Var_4 : compt_record renames tcompt.all;
+         begin
+            --  lngth0 = lngth in mm
+            P2Ada_Var_4.zed := P2Ada_Var_4.zed_S_e0;
+            P2Ada_Var_4.zedo := P2Ada_Var_4.zed_S_o0;
+            P2Ada_Var_4.wavelength := P2Ada_Var_4.lngth0 *
+              Sqrt (er) / Lambda_fd;
+            P2Ada_Var_4.wavelengtho := P2Ada_Var_4.wavelength;
+         end;
+         --  [P2Ada]: end of WITH
+      else
+         if f_n > 0.005
+         then
+            --  ! Numerically unstable and no affect at small f_n
+            --  even mode calculation
+            --  odd mode calculation - uses P1,P2,P3,P4
+            --  P1 and P3 must be recalculated with new u, P2,P4 are OK
+            --  [P2Ada]: WITH instruction
+            --  [P2Ada]: !Help! No type found -> add 'P2Ada_Var_5.' to fields
+            u := tcompt.all.u_even;
+            g := tcompt.all.g_fac;
+            P1 := 0.27488 + (0.6315 + 0.525 / Exp (20.0 *
+                               Log (1.0 + 0.0157 * f_n))) *
+              u - 0.065683 * Exp (-8.7513 * u);
+            P2 := 0.33622 * (1.0 - Exp (-0.03442 * er));
+            P3 := 0.0363 * Exp (-4.6 * u) *
+              (1.0 - Exp (-1.0 * Exp (4.97 * Log (f_n / 38.7))));
+            P4 := 1.0 + 2.751 * (1.0 - Exp (-1.0 * Exp (8.0 *
+                                   Log (er / 15.916))));
+            P5 := 0.334 * Exp (-3.3 * Exp (3.0 * Log (er / 15.0))) + 0.746;
+            P6 := P5 * Exp (-1.0 * Exp (0.368 * Log (f_n / 18.0)));
+            P7 := 1.0 + 4.069 * P6 * Exp (0.479 * Log (g)) *
+              Exp (-1.347 * Exp (0.595 * Log (g)) - 0.17 *
+                     Exp (2.5 * Log (g)));
+            F_e_f := P1 * P2 * Exp (1.5763 *
+                                      Log ((P3 * P4 + 0.1844 * P7) * f_n));
+            ere_e_f := Disperse_f (er, tcompt.all.e_eff_e0, F_e_f);
+            u := tcompt.all.u_odd;
+            P1 := 0.27488 + (0.6315 + 0.525 / Exp (20.0 *
+                               Log (1.0 + 0.0157 * f_n))) * u - 0.065683 *
+              Exp (-8.7513 * u);
+            P3 := 0.0363 * Exp (-4.6 * u) * (1.0 - Exp (-1.0 *
+                                               Exp (4.97 * Log (f_n / 38.7))));
+            P8 := 0.7168 * (1.0 + 1.076 / (1.0 + 0.0576 * (er - 1.0)));
+            P9 := P8 - 0.7913 * (1.0 - Exp (-1.0 * Exp (1.424 *
+                                   Log (f_n / 20.0)))) *
+              Arctan (2.481 * Exp (0.946 * Log (er / 8.0)));
+            P10 := 0.242 * Exp (0.55 * Log (er - 1.0));
+            P11 := 0.6366 * (Exp (-0.3401 * f_n) - 1.0) *
+              Arctan (1.263 * Exp (1.629 * Log (u / 3.0)));
+            P12 := P9 + (1.0 - P9) / (1.0 + 1.183 * Exp (1.376 * Log (u)));
+            P13 := 1.695 * P10 / (0.414 + 1.605 * P10);
+            P14 := 0.8928 + 0.1072 * (1.0 - Exp (-0.42 * Exp (3.215 *
+                                        Log (f_n / 20.0))));
+            P15 := abs (1.0 - 0.8928 * (1.0 + P11) * P12 *
+                          Exp (-P13 * Exp (1.092 * Log (g))) / P14);
+            F_o_f := P1 * P2 * Exp (1.5763 * Log ((P3 * P4 + 0.1844) *
+                                      f_n * P15));
+            ere_o_f := Disperse_f (er, tcompt.all.e_eff_o0, F_o_f);
+            declare P2Ada_Var_5 : compt_record renames tcompt.all;
+            begin
+               --  lngth0 = lngth in mm
+               P2Ada_Var_5.zed := Disperse_f (P2Ada_Var_5.zed_S_e0,
+                                              P2Ada_Var_5.zed_e0, F_e_f);
+               P2Ada_Var_5.zedo := Disperse_f (P2Ada_Var_5.zed_S_o0,
+                                               P2Ada_Var_5.zed_o0, F_o_f);
+               P2Ada_Var_5.wavelength := P2Ada_Var_5.lngth0 *
+                 Sqrt (ere_e_f) / Lambda_fd;
+               P2Ada_Var_5.wavelengtho := P2Ada_Var_5.lngth0 *
+                 Sqrt (ere_o_f) / Lambda_fd;
+            end;
+         else
+            declare P2Ada_Var_6 : compt_record renames tcompt.all;
+            begin
+               --  lngth0 = lngth in mm
+               P2Ada_Var_6.zed := P2Ada_Var_6.zed_e0;
+               P2Ada_Var_6.zedo := P2Ada_Var_6.zed_o0;
+               P2Ada_Var_6.wavelength := P2Ada_Var_6.lngth0 *
+                 Sqrt (P2Ada_Var_6.e_eff_e0) / Lambda_fd;
+               P2Ada_Var_6.wavelengtho := P2Ada_Var_6.lngth0 *
+                 Sqrt (P2Ada_Var_6.e_eff_o0) / Lambda_fd;
+            end;
+            --  [P2Ada]: end of WITH
+         end if;
+      end if;
+   end ms_cl_dispersion;
+
+   function Hammerstad_Z (u : Long_Float) return Long_Float is
+      Result_Hammerstad_Z : Long_Float;
+      f : Long_Float;
+   begin
+      f := 6.0 + (2.0 * Pi - 6.0) *
+        Exp (-1.0 * Exp (0.7528 * Log (30.666 / u)));
+      Result_Hammerstad_Z := 60.0 *
+        Log (f / u + Sqrt (1.0 + ((2.0 / u) ** 2)));
+      return Result_Hammerstad_Z;
+   end Hammerstad_Z;
+
+   function ms_alpha_c (W_in, Z_0_in, er_e : Long_Float) return Long_Float is
+      Result_ms_alpha_c : Long_Float;
+      W_over_h, We_over_h, A_fac, B_fac, W_h_ratio : Long_Float;
+   begin
+      if metal_thickness > 0.0
+      then
+         --  * is W/h < 1/2pi ?*
+         W_over_h := W_in / substrate_h;
+         if W_over_h < 0.1592
+         then
+            B_fac := 2.0 * Pi * W_in;
+            We_over_h := W_over_h + 1.25 * metal_thickness *
+              (1.0 + Log (4.0 * Pi * W_in / metal_thickness)) /
+                (Pi * substrate_h);
+         else
+            B_fac := substrate_h;
+            We_over_h := W_over_h + 1.25 * metal_thickness *
+              (1.0 + Log (2.0 * substrate_h / metal_thickness)) /
+                (Pi * substrate_h);
+         end if;
+         A_fac := 1.0 + (1.0 + 1.25 * Log (2.0 * B_fac / metal_thickness) /
+                           Pi) / We_over_h;
+         if W_over_h < 1.0
+         then
+            W_h_ratio := (32.0 - ((We_over_h) ** 2)) /
+              (32.0 + ((We_over_h) ** 2));
+            W_h_ratio := W_h_ratio /
+              (2.0 * Pi * Z_0_in);
+         else
+            W_h_ratio := 0.667 * We_over_h / (We_over_h + 1.444) + We_over_h;
+            W_h_ratio := W_h_ratio * Z_0_in * er_e / ((120.0 * Pi) ** 2);
+         end if;
+         --  nepers per mm
+         Result_ms_alpha_c := A_fac * W_h_ratio * Rs_at_fd / substrate_h;
+      else
+         Result_ms_alpha_c := 0.0;
+      end if;
+      return Result_ms_alpha_c;
+   end ms_alpha_c;
+
+   function ms_alpha_d (ere_in : Long_Float) return Long_Float is
+      Result_ms_alpha_d : Long_Float;
+      er_int : Long_Float;
+   begin
+      if er /= 1.0
+      then
+         --  nepers/mm
+         er_int := Pi * er * (ere_in - 1.0) / (Sqrt (ere_in) * (er - 1.0));
+         Result_ms_alpha_d := er_int * loss_tangent * design_freq *
+           Eng_Prefix (Character (freq_prefix)) / c_in_mm;
+      else
+         Result_ms_alpha_d := Pi * Sqrt (er) * loss_tangent / Lambda_fd;
+      end if;
+      return Result_ms_alpha_d;
+   end ms_alpha_d;
+
+   function Disperse_f (er1, er2, F_eo : Long_Float) return Long_Float is
+      Result_Disperse_f : Long_Float;
+   begin
+      Result_Disperse_f := er1 - (er1 - er2) / (1.0 + F_eo);
+      return Result_Disperse_f;
+   end Disperse_f;
 
 end pfun2;

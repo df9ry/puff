@@ -1205,4 +1205,608 @@ package body pfun1 is
       --  return millimeters, not meters
    end Get_Param;
 
+   procedure w_s_stripline_cline (zede, zedo : Long_Float;
+                                  woh, soh : in out Long_Float) is
+      ke, ko : Long_Float;
+   begin
+      ke := kkk (zede * Sqrt (er) / (30.0 * Pi));
+      ko := kkk (zedo * Sqrt (er) / (30.0 * Pi));
+      woh := 2.0 * Arctanh (Sqrt (ke * ko)) / Pi;
+      soh := 2.0 * Arctanh (Sqrt (ke / ko) * (1.0 - ko) / (1.0 - ke)) / Pi;
+   end w_s_stripline_cline;
+
+   function cl_cosh (x : Long_Float) return Long_Float is
+      Result_cl_cosh : Long_Float;
+      exp1 : Long_Float;
+   begin
+      if x > 300.0
+      then
+         exp1 := infty;
+         bad_compt := True;
+         message (1) := To_Unbounded_String ("cline impedances");
+         message (2) := To_Unbounded_String ("can't be realized");
+         message (3) := To_Unbounded_String ("in microstrip");
+      else
+         exp1 := Exp (x);
+         Result_cl_cosh := (exp1 + 1.0 / exp1) / 2.0;
+      end if;
+      return Result_cl_cosh;
+   end cl_cosh;
+
+   procedure w_s_microstrip_cline (we, wo : Long_Float;
+                                   woh, soh : in out Long_Float) is
+      tol : constant := 0.0001;
+      codd, ceven, g, fg, dfg, dg, g1 : Long_Float;
+      i : Integer;
+   begin
+      ceven := cl_cosh (Pi * we / 2.0);
+      codd := cl_cosh (Pi * wo / 2.0);
+      soh := 2.0 * Arccosh ((ceven + codd - 2.0) / (codd - ceven)) / Pi;
+      if bad_compt
+      then
+         return;
+      end if;
+      --  starting guess
+      g := cl_cosh (Pi * soh / 2.0);
+      i := 0;
+      loop
+         --  newton algorithm
+         --  !* beware of divergence in this loop *
+         g1 := g;
+         fg := 0.0;
+         dfg := 0.0;
+         error (g, wo, ceven, fg, dfg);
+         if bad_compt
+         then
+            return;
+         end if;
+         dg := fg / dfg;
+         g := g1 - dg;
+         i := i + 1;
+         if g <= 1.0
+         then
+            i := 101;
+         end if;
+         exit when (abs (dg) < abs (tol * g)) or else (i > 100);
+      end loop;
+      if i > 100
+      then
+         bad_compt := True;
+         message (1) := To_Unbounded_String ("cline impedances");
+         message (2) := To_Unbounded_String ("can't be realized");
+         message (3) := To_Unbounded_String ("in microstrip");
+         return;
+      end if;
+      soh := 2.0 * Arccosh (g) / Pi;
+      woh := Arccosh (0.5 * ((g + 1.0) * ceven + g - 1.0)) / Pi - soh / 2.0;
+   end w_s_microstrip_cline;
+
+   procedure error (g, wo, ceven : Long_Float; fg, dfg : in out Long_Float) is
+      hh, sqm1, rsqm1, dcdg, acoshh, acoshg, u1, u2, du1dg, du2dg, dhdg, dcdu1,
+      dcdu2, dcdh : Long_Float;
+   begin
+      hh := 0.5 * ((g + 1.0) * ceven + g - 1.0);
+      dhdg := 0.5 * (ceven + 1.0);
+      acoshh := Arccosh (hh);
+      if bad_compt
+      then
+         return;
+      end if;
+      acoshg := Arccosh (g);
+      if bad_compt
+      then
+         return;
+      end if;
+      sqm1 := ((hh) ** 2) - 1.0;
+      rsqm1 := Sqrt (sqm1);
+      dcdh := (rsqm1 + hh) / (hh * rsqm1 + sqm1);
+      sqm1 := ((g) ** 2) - 1.0;
+      rsqm1 := Sqrt (sqm1);
+      dcdg := (rsqm1 + g) / (g * rsqm1 + sqm1);
+      u1 := ((g + 1.0) * ceven - 2.0) / (g - 1.0);
+      du1dg := ((g - 1.0) * ceven - ((g + 1.0) * ceven - 2.0)) /
+        ((g - 1.0) ** 2);
+      u2 := acoshh / acoshg;
+      du2dg := (acoshg * dcdh * dhdg - acoshh * dcdg) / ((acoshg) ** 2);
+      sqm1 := ((u1) ** 2) - 1.0;
+      rsqm1 := Sqrt (sqm1);
+      dcdu1 := (rsqm1 + u1) / (u1 * rsqm1 + sqm1);
+      sqm1 := ((u2) ** 2) - 1.0;
+      rsqm1 := Sqrt (sqm1);
+      dcdu2 := (rsqm1 + u2) / (u2 * rsqm1 + sqm1);
+      if er > 6.0
+      then
+         fg := (2.0 * Arccosh (u1) + Arccosh (u2)) / Pi - wo;
+         if bad_compt
+         then
+            return;
+         end if;
+         dfg := (2.0 * dcdu1 * du1dg + dcdu2 * du2dg) / Pi;
+      else
+         fg := (2.0 * Arccosh (u1) + 4.0 * Arccosh (u2) / (1.0 + er / 2.0)) /
+           Pi - wo;
+         if bad_compt
+         then
+            return;
+         end if;
+         dfg := (2.0 * dcdu1 * du1dg + 4.0 * dcdu2 * du2dg /
+                 (1.0 + er / 2.0)) / Pi;
+      end if;
+   end error;
+
+   procedure capac (W_h, S_h, er : Long_Float;
+                    ce, co : in out Long_Float) is
+      cp, cf, cfp, cga, cgd, ere, zo, a : Long_Float;
+   begin
+      ere := (er + 1.0) / 2.0 + (er - 1.0) / 2.0 / Sqrt (1.0 + 10.0 / W_h);
+      if W_h <= 1.0
+      then
+         zo := 370.0 * Log (8.0 / W_h + 0.25 * W_h) / (2.0 * Pi * Sqrt (ere));
+      else
+         zo := 370.0 / ((W_h + 1.393 + 0.667 * Log (W_h + 1.44)) * Sqrt (ere));
+      end if;
+      a := Exp (-0.1 * Exp (2.33 - 2.53 * W_h));
+      cp := er * W_h;
+      cf := 0.5 * (Sqrt (ere) / (zo / (120.0 * Pi)) - cp);
+      cfp := cf * Sqrt (er / ere) / (1.0 + a * Tanh (8.0 * S_h) / S_h);
+      cga := kkk (S_h / (S_h + 2.0 * W_h));
+      cgd := er * Log (1.0 / Tanh (Pi * S_h / 4.0)) / Pi + 0.65 * cf *
+        (0.02 * Sqrt (er) / S_h + 1.0 - 1.0 / ((er) ** 2));
+      ce := cp + cf + cfp;
+      co := cp + cf + cga + cgd;
+   end capac;
+
+   procedure ere_even_odd (W_h, S_h : Long_Float;
+                           ee, eo : in out Long_Float) is
+      ce1, co1, cee, coe : Long_Float;
+   begin
+      ce1 := 0.0;
+      co1 := 0.0;
+      capac (W_h, S_h, 1.0, ce1, co1);
+      cee := 0.0;
+      coe := 0.0;
+      capac (W_h, S_h, er, cee, coe);
+      ee := cee / ce1;
+      eo := coe / co1;
+   end ere_even_odd;
+
+   procedure di (di : in out TComplex; s, t : TComplex) is
+   begin
+      di.r := s.r - t.r;
+      di.i := s.i - t.i;
+   end di;
+
+   procedure su (su : in out TComplex; s, t : TComplex) is
+   begin
+      su.r := s.r + t.r;
+      su.i := s.i + t.i;
+   end su;
+
+   procedure Get_Lumped_Params (tcompt : compt;
+                                v1, v2, v3, v4 : in out Long_Float;
+                                u, last_ID, last_prefix : in out Character;
+                                alt_param, parallel_cir : in out Boolean) is
+      c_string, s_value : Unbounded_String;
+      j, long, sign : Integer;
+      value, L_value, temp_val, C_value, omega0 : Long_Float;
+      found, par_error : Boolean;
+      ident, scale_char : Character;
+
+      set1 : constant CharacterArray := ('?', '+', '-', '.', ',', 'j',
+         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+      set2 : constant CharacterArray := ('.', ',',
+         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+      set3 : constant CharacterArray := ('j', 'm', 'H', 'F',
+         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+      set4 : constant CharacterArray := ('y', 'Y', 'z', 'Z', 's', 'S',
+         Character (Omega),
+         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+
+      --  *
+      --  Skip one or more spaces to advance to next
+      --  legitimate data or unit value.
+      --  *
+      procedure skip_space is
+      begin
+         loop
+            --  advance past spaces
+            j := j + 1;
+            exit when (Element (c_string, j) /= ' ') or else (j = long + 1);
+         end loop;
+      end skip_space;
+
+      --  ****************************************************
+      --  * Get_lumped_params *
+      --  convert design Freq to rad/sec times prefix
+      --  look past id letter
+   begin
+      v1 := 0.0;
+      v2 := 0.0;
+      v3 := 0.0;
+      v4 := 0.0;
+      u := '?';
+      last_ID := ' ';
+      last_prefix := ' ';
+      L_value := 0.0;
+      C_value := 0.0;
+      par_error := False;
+      parallel_cir := False;
+      alt_param := False;
+      omega0 := 2.0 * Pi * design_freq * Eng_Prefix (Character (freq_prefix));
+      c_string := tcompt.all.descript;
+      j := 2;
+      if bad_compt
+      then
+         return;
+      end if;
+      long := Length (c_string);
+      while Element (c_string, long) = ' '
+      loop
+         long := long - 1;
+      end loop;
+      --  ignore end blanks
+      if Index (c_string, "" & Character (Parallel)) > 0
+      then
+         parallel_cir := True;
+      end if;
+      --  * Look for character which represents a parallel circuit *
+      for i in 1 .. 4
+      loop
+         s_value := To_Unbounded_String ("");
+         scale_char := ' ';
+         found := False;
+         if j > long
+         then
+            --  [BP2P]: Label "100001" Was "exit_get_lumped"
+            goto LABEL_100001;
+         end if;
+         --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
+         while not is_in (Element (c_string, j), set1)
+         loop
+            --  Advance characters until legitimate data found
+            j := j + 1;
+            if j > long
+            then
+               --  [BP2P]: Label "100001" Was "exit_get_lumped"
+               goto LABEL_100001;
+            end if;
+         end loop;
+         if Element (c_string, j) = '+'
+         then
+            skip_space;
+         end if;
+         if Element (c_string, j) = '-'
+         then
+            skip_space;
+            sign := -1;
+         else
+            sign := 1;
+         end if;
+         if Element (c_string, j) = 'j'
+         then
+            skip_space;
+            ident := 'j';
+         else
+            ident := ' ';
+         end if;
+         --  Check for sweep variable
+         if Element (c_string, j) = '?'
+         then
+            if not alt_param
+            then
+               alt_param := True;
+               skip_space;
+            else
+               par_error := True;
+               goto LABEL_100001;
+            end if;
+         end if;
+         --  * Load string with number characters *
+         loop
+            --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
+            if is_in (Element (c_string, j), set2)
+            then
+               if Element (c_string, j) = ','
+               then
+                  s_value := s_value & '.';
+               else
+                  s_value := s_value & Element (c_string, j);
+               end if;
+               j := j + 1;
+            else
+               found := True;
+            end if;
+            exit when found or else (j = long + 1);
+         end loop;
+         if Element (c_string, j) = ' '
+         then
+            skip_space;
+         end if;
+         --  * Look for engineering prefixes *
+         --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
+         if is_in (char (Element (c_string, j)), Eng_Dec_Mux)
+           and then (j < long)
+         then
+            --  * ignore 'm' if last character *
+            scale_char := Element (c_string, j);
+            skip_space;
+         end if;
+         if is_in (Element (c_string, j), set3) and then (j /= long + 1)
+         then
+            ident := Element (c_string, j);
+            skip_space;
+         end if;
+         if j <= long
+         then
+            if is_in (Element (c_string, j), set4)
+            then
+               u := Element (c_string, j);
+               skip_space;
+            end if;
+         end if;
+         --  Val (s_value, value, code);
+         --  if (code /= 0) or else (Length (s_value) = 0)
+         --  then
+         --     if alt_param and then ident /= 'm'
+         --     then
+         --        --  return 1.0 for uninitialized variables
+         --        --  [BP2P]: Label "100001" Was "exit_get_lumped"
+         --        value := 1.0;
+         --     else
+         --        par_error := True;
+         --        goto LABEL_100001;
+         --     end if;
+         --  end if;
+         value := Long_Float'Value (To_String (s_value));
+         value := value * Long_Float (sign) * Eng_Prefix (scale_char);
+         case ident is
+            when 'F' =>
+               if C_value = 0.0
+               then
+                  C_value := value;
+                  if C_value = 0.0
+                  then
+                     C_value := 1.0 / infty;
+                  end if;
+                  --  watch for zero capacitance
+                  --  [BP2P]: Label "100001" Was "exit_get_lumped"
+               else
+                  par_error := True;
+                  goto LABEL_100001;
+               end if;
+            when 'H' =>
+               if L_value = 0.0
+               then
+                  L_value := value;
+                  if L_value = 0.0
+                  then
+                     L_value := 1.0 / infty;
+                  end if;
+                  --  watch for zero inductance
+                  --  [BP2P]: Label "100001" Was "exit_get_lumped"
+               else
+                  par_error := True;
+                  goto LABEL_100001;
+               end if;
+            when 'j' =>
+               if value > 0.0
+               then
+                  if v2 = 0.0
+                  then
+                     --  [BP2P]: Label "100001" Was "exit_get_lumped"
+                     v2 := value;
+                  else
+                     par_error := True;
+                     goto LABEL_100001;
+                  end if;
+               else
+                  if v3 = 0.0
+                  then
+                     --  [BP2P]: Label "100001" Was "exit_get_lumped"
+                     v3 := value;
+                  else
+                     par_error := True;
+                     goto LABEL_100001;
+                  end if;
+               end if;
+            when 'm' =>
+               --  convert from meters to mm
+               --  * return v4=0 if solo m i.e. Manhattan *
+               v4 := 1000.0 * value;
+            when others =>
+               if v1 = 0.0
+               then
+                  --  [BP2P]: Label "100001" Was "exit_get_lumped"
+                  v1 := value;
+               else
+                  par_error := True;
+                  goto LABEL_100001;
+               end if;
+         end case;
+         --  case
+         --  Save part ID and prefix for alt_param
+         --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
+         if ident /= ' ' and then ident /= 'm'
+         then
+            last_ID := ident;
+         end if;
+         if scale_char /= ' ' and then ident /= 'm'
+         then
+            last_prefix := scale_char;
+         end if;
+      end loop;
+      --  for i
+      <<LABEL_100001>>
+      if not par_error
+      then
+         --  [P2Ada]: "x in y" -> "x and y" redefine "and" before
+         if u = 'z' or else u = 'Z' or else u = Character (Omega)
+         then
+            --  * Swap values if parallel circuit is desired *
+            temp_val := v2;
+            if v1 /= 0.0
+            then
+               v1 := 1.0 / v1;
+            end if;
+            if v3 /= 0.0
+            then
+               v2 := -1.0 / v3;
+            end if;
+            if temp_val /= 0.0
+            then
+               v3 := -1.0 / temp_val;
+            end if;
+            if u = Character (Omega)
+            then
+               --  *swap units too *
+               u := 'S';
+            else
+               u := 'y';
+            end if;
+         end if;
+         --  if u in
+         --  * Add in capacitor and inductor values *
+         if C_value /= 0.0
+         then
+            case u is
+               when Character (Omega) =>
+                  v3 := v3 - 1.0 / (omega0 * C_value);
+               when 'z' | 'Z' =>
+                  v3 := v3 - 1.0 / (Z0 * omega0 * C_value);
+               when 'y' | 'Y' =>
+                  v2 := v2 + Z0 * omega0 * C_value;
+               when 's' | 'S' =>
+                  v2 := v2 + omega0 * C_value;
+               when others =>
+                  --  if 'F' the only unit
+                  if parallel_cir
+                  then
+                     u := 'S';
+                     if v1 /= 0.0
+                     then
+                        v1 := 1.0 / v1;
+                     end if;
+                     --  assume ohms @ v1 if no units
+                     v2 := v2 + omega0 * C_value;
+                  else
+                     u := Character (Omega);
+                     v3 := v3 - 1.0 / (omega0 * C_value);
+                  end if;
+            end case;
+         end if;
+         --  if..case
+         if L_value /= 0.0
+         then
+            case u is
+               when Character (Omega) =>
+                  v2 := v2 + omega0 * L_value;
+               when 'z' | 'Z' =>
+                  v2 := v2 + omega0 * L_value / Z0;
+               when 'y' | 'Y' =>
+                  v3 := v3 - Z0 / (omega0 * L_value);
+               when 's' | 'S' =>
+                  v3 := v3 - 1.0 / (omega0 * L_value);
+               when others =>
+                  --  if 'H' the only unit
+                  if parallel_cir
+                  then
+                     u := 'S';
+                     if v1 /= 0.0
+                     then
+                        v1 := 1.0 / v1;
+                     end if;
+                     --  assume ohms @ v1 if no units
+                     v3 := v3 - 1.0 / (omega0 * L_value);
+                  else
+                     u := Character (Omega);
+                     v2 := v2 + omega0 * L_value;
+                  end if;
+                  --  else
+            end case;
+         end if;
+         --  if..case
+      end if;
+      --  not par_error
+      if par_error or else (u = '?')
+      then
+         ccompt := tcompt;
+         bad_compt := True;
+         message (1) := To_Unbounded_String ("Error in");
+         message (2) := To_Unbounded_String ("lumped element");
+         message (3) := To_Unbounded_String ("description");
+      end if;
+   end Get_Lumped_Params;
+
+   procedure box (x, y, ij : Integer) is
+      x1 : Integer := x;
+      y1 : Integer := y;
+   begin
+      case ij is
+         when 2 =>
+            y1 := y1 - 1;
+            x1 := x1 - 1;
+         when 3 =>
+            x1 := x1 - 1;
+         when 4 =>
+            y1 := y1 - 1;
+         when others =>
+            --  [P2Ada]: no otherwise / else in Pascal
+            null;
+      end case;
+      --  case
+      PutPixel (Integer_32 (x1), Integer_32 (y1),
+                Integer_32 (s_color (ij)));
+      PutPixel (Integer_32 (x1 + 1), Integer_32 (y1),
+                Integer_32 (s_color (ij)));
+      PutPixel (Integer_32 (x1), Integer_32 (y1 + 1),
+                Integer_32 (s_color (ij)));
+      PutPixel (Integer_32 (x1 + 1), Integer_32 (y1 + 1),
+                Integer_32 (s_color (ij)));
+   end box;
+
+   procedure lengthxy (tnet : net) is
+      lengths, widths : Long_Float;
+   begin
+      dirn_xy;
+      if tnet /= null
+      then
+         lengths := tnet.all.com.all.lngth;
+         widths := tnet.all.com.all.width;
+      else
+         --  Put (lst);
+         Put ("error");
+         New_Line;
+      end if;
+      lengthxm := lengths * Long_Float (abs (xii)) + widths *
+                            Long_Float (abs (yii));
+      lengthym := lengths * Long_Float (abs (yii)) + widths *
+                            Long_Float (abs (xii));
+   end lengthxy;
+
+   function ext_port (tcon : conn) return Boolean is
+      Result_ext_port : Boolean;
+   begin
+      Result_ext_port := betweeni (1, tcon.all.port_type, min_ports);
+      return Result_ext_port;
+   end ext_port;
+
+   function betweeni (x1, x2, x3 : Integer) return Boolean is
+      Result_betweeni : Boolean;
+   begin
+      if (x1 <= x2) and then (x2 <= x3)
+      then
+         Result_betweeni := True;
+      else
+         Result_betweeni := False;
+      end if;
+      return Result_betweeni;
+   end betweeni;
+
+   procedure puff_draw (x1, y1, x2, y2, color : Integer) is
+   begin
+      SetCol (Unsigned_16 (color));
+      Line (Integer_32 (x1), Integer_32 (y1),
+            Integer_32 (x2), Integer_32 (y2));
+   end puff_draw;
+
 end pfun1;

@@ -370,6 +370,8 @@ package pfun1 is
    procedure co (co : in out TComplex; s, t : Long_Float);
    procedure rc (rc : in out TComplex; z : TComplex);
    procedure sm (sm : in out TComplex; s : Long_Float; t : TComplex);
+   procedure di (di : in out TComplex; s, t : TComplex);
+   procedure su (su : in out TComplex; s, t : TComplex);
 
    function kkk (x : Long_Float) return Long_Float;
 
@@ -397,6 +399,22 @@ package pfun1 is
 
    function goto_numeral (n : Integer; x : Unbounded_String) return Integer;
 
+   procedure w_s_stripline_cline (zede, zedo : Long_Float;
+                                  woh, soh : in out Long_Float);
+
+   procedure w_s_microstrip_cline (we, wo : Long_Float;
+                                   woh, soh : in out Long_Float);
+
+   function cl_cosh (x : Long_Float) return Long_Float;
+
+   procedure error (g, wo, ceven : Long_Float; fg, dfg : in out Long_Float);
+
+   procedure capac (W_h, S_h, er : Long_Float;
+                    ce, co : in out Long_Float);
+
+   procedure ere_even_odd (W_h, S_h : Long_Float;
+                           ee, eo : in out Long_Float);
+
    procedure Get_Param (tcompt       : compt;
                         n            : Integer;
                         value        : in out Long_Float;
@@ -404,6 +422,21 @@ package pfun1 is
                         u1, prefix   : in out Character;
                         alt_param    : in out Boolean);
 
+   procedure Get_Lumped_Params (tcompt : compt;
+                                v1, v2, v3, v4 : in out Long_Float;
+                                u, last_ID, last_prefix : in out Character;
+                                alt_param, parallel_cir : in out Boolean);
+
    function Eng_Prefix (c : Character) return Long_Float;
+
+   procedure box (x, y, ij : Integer);
+
+   procedure lengthxy (tnet : net);
+
+   function ext_port (tcon : conn) return Boolean;
+
+   function betweeni (x1, x2, x3 : Integer) return Boolean;
+
+   procedure puff_draw (x1, y1, x2, y2, color : Integer);
 
 end pfun1;

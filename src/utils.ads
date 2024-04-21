@@ -13,6 +13,8 @@ package Utils is
 
    function Round (x : Long_Float) return Integer;
 
+   procedure PutFloat (Item : Long_Float; Fore, Aft, Exp : Integer);
+
    Program_halted : exception;
 
 end Utils;

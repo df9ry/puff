@@ -1,5 +1,6 @@
-with Interfaces;           use Interfaces;
-with Interfaces.C;         use Interfaces.C;
+with Interfaces; use Interfaces;
+
+with Interfaces.C; use Interfaces.C;
 with Interfaces.C.Strings; use Interfaces.C.Strings;
 
 package xgraph is
