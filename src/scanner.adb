@@ -19,7 +19,7 @@ package body Scanner is
 
    procedure SkipToEndOfLine (file : Ada.Text_IO.File_Type) is
    begin
-      Skip_Line (file);
+      Utils.Skip_Line (file);
       Get (file, cur_ch);
       Get (file, next_ch);
    end SkipToEndOfLine;

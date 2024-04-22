@@ -1809,4 +1809,67 @@ package body pfun1 is
             Integer_32 (x2), Integer_32 (y2));
    end puff_draw;
 
+   function Manhattan (tcompt : compt) return Boolean is
+      Result_Manhattan : Boolean;
+      c_string : Unbounded_String;
+      long : Integer;
+   begin
+      if Manhattan_Board
+      then
+         Result_Manhattan := True;
+      else
+         c_string := tcompt.all.descript;
+         long := Length (c_string);
+         while Element (c_string, long) = ' '
+         loop
+            long := long - 1;
+         end loop;
+         --  ignore end blanks
+         --  * Select Manhattan if last character is an 'M' *
+         if Element (c_string, long) = 'M'
+         then
+            Result_Manhattan := True;
+         else
+            Result_Manhattan := False;
+         end if;
+         --  * Select Manhattan if a '?' is present in clines or tline *
+         while long > 0
+         loop
+            if Element (c_string, long) = '?' and then
+              (tcompt.all.typ = 'c' or else tcompt.all.typ = 't')
+            then
+               Result_Manhattan := True;
+            end if;
+            long := long - 1;
+         end loop;
+      end if;
+      --  else
+      return Result_Manhattan;
+   end Manhattan;
+
+   function fileexists (note : Boolean;
+                        inf : in out File_Type;
+                        fname : Unbounded_String) return Boolean
+   is
+   begin
+      if fname = ""
+      then
+         return False;
+      end if;
+      Open (inf, In_File, To_String (fname));
+      return True;
+   exception
+      when Name_Error =>
+         begin
+            if note
+            then
+               message (2) := To_Unbounded_String ("File not found");
+               message (3) := fname;
+               Write_Message;
+               delay (1000.0);
+            end if;
+         end;
+      return False;
+   end fileexists;
+
 end pfun1;

@@ -439,4 +439,10 @@ package pfun1 is
 
    procedure puff_draw (x1, y1, x2, y2, color : Integer);
 
+   function Manhattan (tcompt : compt) return Boolean;
+
+   function fileexists (note : Boolean;
+                        inf : in out File_Type;
+                        fname : Unbounded_String) return Boolean;
+
 end pfun1;

@@ -1,7 +1,5 @@
 
---  with Interfaces.C;
-
-with xgraph;                use xgraph;
+with xgraph;                  use xgraph;
 
 package body Utils is
 
@@ -38,5 +36,38 @@ package body Utils is
       --  s := Long_Float'Image (Item, Fore, Aft, Exp);
       PutStr (Interfaces.C.To_C (Long_Float'Image (Item)));
    end PutFloat;
+
+   function SeekEoln (File : File_Type) return Boolean is
+      Item : Character;
+      End_Of_Line : Boolean;
+      Whitespace : constant CharacterArray :=
+         (' ', ASCII.HT, ASCII.CR, ASCII.LF);
+   begin
+      loop
+         Look_Ahead (File, Item, End_Of_Line);
+         if End_Of_Line
+         then
+            return True;
+         end if;
+         if not is_in (Item, Whitespace)
+         then
+            return False;
+         end if;
+         Get (File, Item);
+      end loop;
+   end SeekEoln;
+
+   procedure Skip_Line (File : File_Type) is
+      Item : Character;
+      End_Of_Line : Boolean;
+      Ignores : constant CharacterArray :=
+         (' ', ASCII.HT, ASCII.CR, ASCII.LF);
+   begin
+      loop
+         Look_Ahead (File, Item, End_Of_Line);
+         exit when End_Of_File (File) or else not is_in (Item, Ignores);
+         Get (File, Item);
+      end loop;
+   end Skip_Line;
 
 end Utils;
