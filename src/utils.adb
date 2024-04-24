@@ -70,4 +70,14 @@ package body Utils is
       end loop;
    end Skip_Line;
 
+   procedure Get (File : File_Type; Item : out Unbounded_String) is
+      ch : Character;
+   begin
+      Item := To_Unbounded_String ("");
+      while not (End_Of_File (File) or else End_Of_Line (File)) loop
+         Get (File, ch);
+         Item := Item & ch;
+      end loop;
+   end Get;
+
 end Utils;

@@ -2,6 +2,7 @@
 with Ada.Text_IO;           use Ada.Text_IO;
 
 with Interfaces.C;          use Interfaces.C;
+with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 
 package Utils is
 
@@ -19,6 +20,7 @@ package Utils is
 
    function SeekEoln (File : File_Type) return Boolean;
    procedure Skip_Line (File : File_Type);
+   procedure Get (File : File_Type; Item : out Unbounded_String);
 
    Program_halted : exception;
 

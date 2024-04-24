@@ -172,7 +172,7 @@ package body pfmsc is
       first_char : Character;
       char1, char2 : Character;
       freq_present, Eesof_format : Boolean;
-      i, j, number_of_s, code1, number_of_ports, Eesof_ports : Integer;
+      i, number_of_s, number_of_ports, Eesof_ports : Integer;
       f1, mag, ph : Long_Float;
 
       --  *
@@ -453,7 +453,7 @@ package body pfmsc is
                   loop
                      Skip_Line (dev_file);
                   end loop;
-                  Get (dev_file, template);
+                  Utils.Get (dev_file, template);
                   Skip_Line (dev_file);
                   if Index (template, "\b") > 0
                   then
@@ -499,9 +499,9 @@ package body pfmsc is
                         message (3) := To_Unbounded_String ("device file");
                         goto LABEL_100001;
                      end if;
-                     Get (dev_file, template);
+                     Utils.Get (dev_file, template);
                      Skip_Line (dev_file);
-                     Insert (first_char, template, 1);
+                     Insert (template, 1, first_char'Image);
                      first_char := ' ';
                      Pars_tplate (template, number_of_ports, number_of_s,
                                   freq_present);
@@ -509,13 +509,13 @@ package body pfmsc is
                end if;
                if indef
                then
-                  number_of_con := number_of_ports + 1;
+                  P2Ada_Var_1.number_of_con := number_of_ports + 1;
                else
-                  number_of_con := number_of_ports;
+                  P2Ada_Var_1.number_of_con := number_of_ports;
                end if;
-               for j in 1 .. number_of_con
+               for j in 1 .. P2Ada_Var_1.number_of_con
                loop
-                  for i in 1 .. number_of_con
+                  for i in 1 .. P2Ada_Var_1.number_of_con
                   loop
                      sdevice (i, j).r := 0.0;
                      sdevice (i, j).i := 0.0;
@@ -523,9 +523,10 @@ package body pfmsc is
                end loop;
                if Manhattan (tcompt) or else (tcompt.lngth = 0.0)
                then
-                  if number_of_con > 1
+                  if P2Ada_Var_1.number_of_con > 1
                   then
-                     tcompt.all.lngth := Manh_length * (number_of_con - 1);
+                     tcompt.all.lngth := Manh_length *
+                       Long_Float (P2Ada_Var_1.number_of_con - 1);
                   else
                      tcompt.all.lngth := Manh_length;
                   end if;
@@ -536,10 +537,11 @@ package body pfmsc is
                   bad_compt := True;
                   message (1) := To_Unbounded_String ("Device length");
                   message (2) := To_Unbounded_String ("must be");
-                  message (3) := To_Unbounded_String (">" & sresln'Image);
+                  --  message (3) := To_Unbounded_String (">" & sresln'Image);
+                  message (3) := To_Unbounded_String (">" & sresln);
                   goto LABEL_100001;
                end if;
-               con_space := 0.0;
+               P2Ada_Var_1.con_space := 0.0;
                c_ss := null;
                c_f := null;
                f1 := -1.0;
@@ -570,6 +572,7 @@ package body pfmsc is
                   end if;
                   for i in 1 .. number_of_s
                   loop
+                     mag := 0.0;
                      Read_Number (mag);
                      if bad_compt
                      then
@@ -581,6 +584,7 @@ package body pfmsc is
                         end if;
                         goto LABEL_100001;
                      end if;
+                     ph := 0.0;
                      Read_Number (ph);
                      if bad_compt
                      then
@@ -595,9 +599,9 @@ package body pfmsc is
                   then
                      Indef_Matrix (sdevice, number_of_ports);
                   end if;
-                  for j in 1 .. number_of_con
+                  for j in 1 .. P2Ada_Var_1.number_of_con
                   loop
-                     for i in 1 .. number_of_con
+                     for i in 1 .. P2Ada_Var_1.number_of_con
                      loop
                         if c_ss = null
                         then
@@ -624,5 +628,103 @@ package body pfmsc is
          end if;
       end if;
    end Device_Read;
+
+   procedure Indef_Matrix (S : in out s_conv_matrix; n : Integer) is
+      --  ******************************************
+      co_0, sum : TComplex;
+      --  *
+      --  Change sign of complex number
+      --  *
+
+      procedure Sign_Change (z : in out TComplex) is
+      begin
+         z.r := -z.r;
+         z.i := -z.i;
+      end Sign_Change;
+      --  ******************************************
+      --  *
+      --  z1 = z1 +z2
+      --  *
+
+      procedure Sum_Up (z1 : in out TComplex; z2 : TComplex) is
+      begin
+         z1.r := z1.r + z2.r;
+         z1.i := z1.i + z2.i;
+      end Sum_Up;
+      --  *******************************************
+      --  *
+      --  Swap s-parameters between ports 2 and 3.
+      --  To be called only for the 2 port device.
+      --  *
+
+      procedure Swap_2_and_3 (T : in out s_conv_matrix) is
+         --  * S12 <-> S13 *
+         --  * S21 <-> S31 *
+         --  * S23 <-> S32 *
+         --  * S22 <-> S33 *
+         temp_z : TComplex;
+      begin
+         Equate_Zs (temp_z, T (1, 3));
+         Equate_Zs (T (1, 3), T (1, 2));
+         Equate_Zs (T (1, 2), temp_z);
+         Equate_Zs (temp_z, T (3, 1));
+         Equate_Zs (T (3, 1), T (2, 1));
+         Equate_Zs (T (2, 1), temp_z);
+         Equate_Zs (temp_z, T (2, 3));
+         Equate_Zs (T (2, 3), T (3, 2));
+         Equate_Zs (T (3, 2), temp_z);
+         Equate_Zs (temp_z, T (3, 3));
+         Equate_Zs (T (3, 3), T (2, 2));
+         Equate_Zs (T (2, 2), temp_z);
+      end Swap_2_and_3;
+      --  ********************************************
+      --  Changes S to a normalized admittance matrix
+      --  * Y n-port to Y n+1 port routine: *
+   begin
+      Matrix_Conv (S, n);
+      co (co_0, 0.0, 0.0);
+      for j in 1 .. n
+      loop
+         --  initialize sum to complex zero
+         Equate_Zs (sum, co_0);
+         for i in 1 .. n
+         loop
+            Sum_Up (sum, S (i, j));
+         end loop;
+         --  new value for Y[n+1,j]
+         Sign_Change (sum);
+         Equate_Zs (S (n + 1, j), sum);
+      end loop;
+      for i in 1 .. n
+      loop
+         --  initialize sum to complex zero
+         Equate_Zs (sum, co_0);
+         for j in 1 .. n
+         loop
+            Sum_Up (sum, S (i, j));
+         end loop;
+         --  new value for Y[i,n+1]
+         Sign_Change (sum);
+         Equate_Zs (S (i, n + 1), sum);
+      end loop;
+      --  initialize sum to complex zero
+      Equate_Zs (sum, co_0);
+      for i in 1 .. n
+      loop
+         for j in 1 .. n
+         loop
+            Sum_Up (sum, S (i, j));
+         end loop;
+      end loop;
+      --  new value for Y[n+1,n+1]
+      --  Change from Y to indef S matrix
+      Equate_Zs (S (n + 1, n + 1), sum);
+      Matrix_Conv (S, n + 1);
+      if n = 2
+      then
+         Swap_2_and_3 (S);
+      end if;
+      --  * Exchange ports 2 and 3 for the 3 port indef *
+   end Indef_Matrix;
 
 end pfmsc;

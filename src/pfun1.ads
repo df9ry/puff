@@ -373,6 +373,8 @@ package pfun1 is
    procedure di (di : in out TComplex; s, t : TComplex);
    procedure su (su : in out TComplex; s, t : TComplex);
 
+   function co_mag (z : TComplex) return Long_Float;
+
    function kkk (x : Long_Float) return Long_Float;
 
    function widtht (zed : Long_Float) return Long_Float;
@@ -444,5 +446,24 @@ package pfun1 is
    function fileexists (note : Boolean;
                         inf : in out File_Type;
                         fname : Unbounded_String) return Boolean;
+
+   procedure Equate_Zs (z1 : in out TComplex; z2 : TComplex);
+
+   procedure Matrix_Conv (a : in out s_conv_matrix; n : Integer);
+
+   procedure Matrix_Inversion (a : in out s_conv_matrix; n : Integer);
+
+   procedure Matrix_Mux (a : in out s_conv_matrix; b, c : s_conv_matrix;
+                         n : Integer);
+
+   procedure LU_Decomp (a : in out s_conv_matrix; n : Integer;
+                        indx : in out s_conv_index; d : in out Long_Float);
+
+   procedure LU_Sub (a : s_conv_matrix; n : Integer; indx : s_conv_index;
+                     b : in out s_conv_vector);
+
+   procedure supr (vu : in out TComplex; vX, vY : TComplex);
+
+   procedure diffpr (vu : in out TComplex; vX, vY : TComplex);
 
 end pfun1;

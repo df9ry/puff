@@ -1872,4 +1872,265 @@ package body pfun1 is
       return False;
    end fileexists;
 
+   procedure Equate_Zs (z1 : in out TComplex; z2 : TComplex) is
+   begin
+      z1.r := z2.r;
+      z1.i := z2.i;
+   end Equate_Zs;
+
+   procedure Matrix_Conv (a : in out s_conv_matrix; n : Integer) is
+      --  initialize pointers for c[i,j] b[i,j] and make copy of a[i,j]
+      b, c : s_conv_matrix;
+      co_0, co_1 : TComplex;
+   begin
+      co (co_0, 0.0, 0.0);
+      co (co_1, 1.0, 0.0);
+      for j in 1 .. n
+      loop
+         for i in 1 .. n
+         loop
+            if i = j
+            then
+               --  di is complex difference
+               --  su is complex sum
+               --  di is complex difference
+               --  su is complex sum
+               di (b (i, j), co_1, a (i, j));
+               su (c (i, j), co_1, a (i, j));
+            else
+               di (b (i, j), co_0, a (i, j));
+               Equate_Zs (c (i, j), a (i, j));
+            end if;
+         end loop;
+      end loop;
+      --  * Now B = (I - A) and C = (I + A)  *
+      --  * Now B = (I - A) and C = (I + A)^(-1)  *
+      --  * Now A = (I - A)(I + A)^(-1)  *
+      Matrix_Inversion (c, n);
+      Matrix_Mux (a, b, c, n);
+   end Matrix_Conv;
+
+   procedure Matrix_Inversion (a : in out s_conv_matrix; n : Integer) is
+      --  complex zero
+      --  complex one
+      --  * LU decomposition of matrix a *
+      d : Long_Float;
+      co_0, co_1 : TComplex;
+      indx : s_conv_index;
+      col : s_conv_vector;
+      y : s_conv_matrix;
+   begin
+      co (co_0, 0.0, 0.0);
+      co (co_1, 1.0, 0.0);
+      d := 0.0;
+      LU_Decomp (a, n, indx, d);
+      for j in 1 .. n
+      loop
+         for i in 1 .. n
+         loop
+            Equate_Zs (col (i), co_0);
+         end loop;
+         --  fill column with zeros
+         --  Put 1+j0 in the proper position
+         Equate_Zs (col (j), co_1);
+         LU_Sub (a, n, indx, col);
+         for i in 1 .. n
+         loop
+            Equate_Zs (y (i, j), col (i));
+         end loop;
+      end loop;
+      --  * Fill Matrix "a" with data in "y" *
+      for j in 1 .. n
+      loop
+         for i in 1 .. n
+         loop
+            Equate_Zs (a (i, j), y (i, j));
+         end loop;
+      end loop;
+   end Matrix_Inversion;
+
+   procedure Matrix_Mux (a : in out s_conv_matrix; b, c : s_conv_matrix;
+                         n : Integer) is
+      sum, co_0 : TComplex;
+   begin
+      co (co_0, 0.0, 0.0);
+      for j in 1 .. n
+      loop
+         for i in 1 .. n
+         loop
+            --  initialize sum to zero
+            Equate_Zs (sum, co_0);
+            for k in 1 .. n
+            loop
+               supr (sum, b (i, k), c (k, j));
+            end loop;
+            --  * sum:= sum + b[i,k]*c[k,j] *
+            --  fill matrix "a"
+            Equate_Zs (a (i, j), sum);
+         end loop;
+      end loop;
+   end Matrix_Mux;
+
+   procedure LU_Decomp (a : in out s_conv_matrix; n : Integer;
+                           indx : in out s_conv_index; d : in out Long_Float)
+   is
+      --  new(vv);
+      --  * Loop over rows to get implicit scaling information *
+      tiny : constant := 1.0e-20;
+      type s_real_vector is array (1 .. Conv_size) of Long_Float;
+      imax : Integer;
+      sum, dum_z, z_dum : TComplex;
+      big, dum_r : Long_Float;
+      vv : s_real_vector;
+   begin
+      d := 1.0;
+      for i in 1 .. n
+      loop
+         big := 0.0;
+         for j in 1 .. n
+         loop
+            if co_mag (a (i, j)) > big
+            then
+               big := co_mag (a (i, j));
+            end if;
+         end loop;
+         if big = 0.0
+         then
+            --  if zeros all along the column...
+            --  ! This will not cause recovery *
+            message (1) := To_Unbounded_String ("Warning!");
+            message (2) := To_Unbounded_String ("indef part has");
+            message (3) := To_Unbounded_String ("singular matrix");
+            Write_Message;
+            big := tiny;
+         end if;
+         --  save the scaling for future reference
+         vv (i) := 1.0 / big;
+      end loop;
+      for j in 1 .. n
+      loop
+         for i in 1 .. j - 1
+         loop
+            Equate_Zs (sum, a (i, j));
+            for k in 1 .. i - 1
+            loop
+               diffpr (sum, a (i, k), a (k, j));
+            end loop;
+            --  * sum=sum-a[i,k]*a[k,j] *
+            Equate_Zs (a (i, j), sum);
+         end loop;
+         big := 0.0;
+         for i in j .. n
+         loop
+            Equate_Zs (sum, a (i, j));
+            for k in 1 .. j - 1
+            loop
+               diffpr (sum, a (i, k), a (k, j));
+            end loop;
+            --  * sum=sum-a[i,k]*a[k,j] *
+            --  * Check here for a better figure of merit for the pivot *
+            Equate_Zs (a (i, j), sum);
+            dum_r := vv (i) * co_mag (sum);
+            if dum_r >= big
+            then
+               --  *if better, exchange and save index*
+               big := dum_r;
+               imax := i;
+            end if;
+         end loop;
+         if j /= imax
+         then
+            --  * Interchange rows if needed *
+            for k in 1 .. n
+            loop
+               Equate_Zs (dum_z, a (imax, k));
+               Equate_Zs (a (imax, k), a (j, k));
+               Equate_Zs (a (j, k), dum_z);
+            end loop;
+            --  * Interchange the scale factor *
+            d := -d;
+            vv (imax) := vv (j);
+         end if;
+         indx (j) := imax;
+         if co_mag (a (j, j)) = 0.0
+         then
+            a (j, j).r := tiny;
+         end if;
+         if j /= n
+         then
+            --  complex reciprocal-creates pointer z_dum
+            rc (z_dum, a (j, j));
+            for i in j + 1 .. n
+            loop
+               --  ! is this legal?
+               --  *a[i,j] := a[i,j]*z_dum *
+               prp (dum_z, a (i, j), z_dum);
+               Equate_Zs (a (i, j), dum_z);
+            end loop;
+         end if;
+      end loop;
+   end LU_Decomp;
+
+   procedure LU_Sub (a : s_conv_matrix; n : Integer;
+                     indx : s_conv_index; b : in out s_conv_vector) is
+      ip, ii : Integer;
+      sum, dum_z : TComplex;
+   begin
+      ii := 0;
+      for i in 1 .. n
+      loop
+         --  sum := b[ip]
+         --  b[ip] := b[i]
+         ip := indx (i);
+         Equate_Zs (sum, b (ip));
+         Equate_Zs (b (ip), b (i));
+         if ii /= 0
+         then
+            for j in ii .. i - 1
+            loop
+               diffpr (sum, a (i, j), b (j));
+            end loop;
+            --  sum := sum-a[i,j]*b[j]
+         else
+            if co_mag (sum) /= 0.0
+            then
+               ii := i;
+            end if;
+         end if;
+         Equate_Zs (b (i), sum);
+      end loop;
+      for i in reverse 1 .. n
+      loop
+         Equate_Zs (sum, b (i));
+         for j in i + 1 .. n
+         loop
+            diffpr (sum, a (i, j), b (j));
+         end loop;
+         --  sum := sum-a[i,j]*b[j]
+         --  complex reciprocal - new pointer
+         --  ! is this legal?
+         rc (dum_z, a (i, i));
+         prp (b (i), sum, dum_z);
+      end loop;
+   end LU_Sub;
+
+   procedure supr (vu : in out TComplex; vX, vY : TComplex) is
+   begin
+      vu.r := vu.r + vX.r * vY.r - vX.i * vY.i;
+      vu.i := vu.i + vX.r * vY.i + vX.i * vY.r;
+   end supr;
+
+   function co_mag (z : TComplex) return Long_Float is
+      Result_co_mag : Long_Float;
+   begin
+      Result_co_mag := Sqrt (((z.r) ** 2) + ((z.i) ** 2));
+      return Result_co_mag;
+   end co_mag;
+
+   procedure diffpr (vu : in out TComplex; vX, vY : TComplex) is
+   begin
+      vu.r := vu.r - vX.r * vY.r + vX.i * vY.i;
+      vu.i := vu.i - vX.r * vY.i - vX.i * vY.r;
+   end diffpr;
+
 end pfun1;
