@@ -7,7 +7,7 @@ with Ada.Text_IO;           use Ada.Text_IO;
 
 with Interfaces.C;          use Interfaces.C;
 
-with Utils;
+with Utils;                 use Utils;
 with StringUtils;
 
 package body pfmsc is
@@ -451,16 +451,16 @@ package body pfmsc is
                else
                   while Utils.SeekEoln (dev_file)
                   loop
-                     Skip_Line (dev_file);
+                     Utils.Skip_Line (dev_file);
                   end loop;
                   Utils.Get (dev_file, template);
-                  Skip_Line (dev_file);
+                  Utils.Skip_Line (dev_file);
                   if Index (template, "\b") > 0
                   then
                      loop
                         Get (dev_file, char1);
                         Get (dev_file, char2);
-                        Skip_Line (dev_file);
+                        Utils.Skip_Line (dev_file);
                         exit when ((char1 = '\') and then
                                      (char2 = 's' or else char2 = 'S')) or else
                            End_Of_File (dev_file);
@@ -500,7 +500,7 @@ package body pfmsc is
                         goto LABEL_100001;
                      end if;
                      Utils.Get (dev_file, template);
-                     Skip_Line (dev_file);
+                     Utils.Skip_Line (dev_file);
                      Insert (template, 1, first_char'Image);
                      first_char := ' ';
                      Pars_tplate (template, number_of_ports, number_of_s,
@@ -538,7 +538,8 @@ package body pfmsc is
                   message (1) := To_Unbounded_String ("Device length");
                   message (2) := To_Unbounded_String ("must be");
                   --  message (3) := To_Unbounded_String (">" & sresln'Image);
-                  message (3) := To_Unbounded_String (">" & sresln);
+                  message (3) :=
+                    To_Unbounded_String (">" & To_String (sresln));
                   goto LABEL_100001;
                end if;
                P2Ada_Var_1.con_space := 0.0;
@@ -726,5 +727,246 @@ package body pfmsc is
       end if;
       --  * Exchange ports 2 and 3 for the 3 port indef *
    end Indef_Matrix;
+
+   procedure Draw_EGA_Smith (imped_chart : Boolean) is
+      --  ,Angle_2
+      --  ,a,b
+      --  ,arc_length
+      --  *****************************************************
+      I : Integer;
+      RG_reye, reye : Integer;
+      theta_start_high, theta_start_low, theta_in, beta : Long_Float;
+      --  *
+      --  Find maximum angle allowed before an arc circle
+      --  goes outside the Smith chart.
+      --  Must have a<>0, b<>0.
+      --  *
+
+      procedure Get_thetas (a, b, cir_rad : Long_Float; delta_x : Integer) is
+         x : Long_Float;
+      begin
+         if (a + b) <= cir_rad
+         then
+            --  if entire circle inside radius
+            --  Cos(theta_in) = x
+            --  this ArcCos function valid for -1 < x < 1
+            theta_start_high := 0.0;
+            theta_start_low := 0.0;
+            theta_in := 180.0;
+         else
+            x := 0.5 * (a / b + b / a - ((1.0 * cir_rad) ** 2) / (a * b));
+            theta_in := 90.0 - 180.0 *
+              Arctan (x / Sqrt (1.0 - ((x) ** 2))) / Pi;
+            if imped_chart or else (delta_x > 0)
+            then
+               --  admittance chart
+               theta_start_high := 270.0 - beta - theta_in;
+               theta_start_low := 450.0 + beta - theta_in;
+            else
+               theta_start_high := 270.0 + beta - theta_in;
+               theta_start_low := 450.0 - beta - theta_in;
+            end if;
+            if imped_chart and then (delta_x < 0)
+            then
+               theta_start_high := 360.0 - theta_in;
+            end if;
+            if not (imped_chart) and then (delta_x > 0)
+            then
+               theta_start_high := 180.0 - theta_in;
+            end if;
+         end if;
+      end Get_thetas;
+      --  *********************************************************
+      --  *
+      --  Make dotted arcs inside the smith chart
+      --  *
+
+      procedure Make_Dot_Arcs (Arc_Rad, RG_delta_x, clip_rad : Integer) is
+         --  k : integer;
+         --  Angle_2:= Round( 180* Arc_length / (Pi * Arc_Rad) );
+         --  if Angle_2 = 0 then Angle_2 := 1;
+         a, b : Long_Float;
+         j : Integer;
+      begin
+         a := Long_Float (Arc_Rad);
+         if RG_delta_x = 0
+         then
+            --  b is the distance between circle centers
+            --  right triangle for XB circles
+            b := Sqrt (((1.0 * Long_Float (reye)) ** 2) + ((a) ** 2));
+            beta := 180.0 * Arctan (1.0 * Long_Float (reye) / a) / Pi;
+            if b < (a + Long_Float (clip_rad))
+            then
+               --  for k:= 1 to Trunc(2*theta_in) div Angle_2 do begin
+               --  ths:= Round(theta_start_high) + (k-1)*Angle_2;
+               --  Arc(centerx+RG_reye,centery-Round(yf*Arc_Rad),
+               --  ths,ths+1,Arc_Rad);
+               --  {plotting one degree makes a single arc point}
+               --  ths:= Round(theta_start_low) + (k-1)*Angle_2;
+               --  Arc(centerx+RG_reye,centery+Round(yf*Arc_Rad),
+               --  ths,ths+1,Arc_Rad);
+               --  end; {for k}
+               --  BUG fix: Arc doesn't like coordinates outside of screen!!
+               Get_thetas (a, b, Long_Float (clip_rad), 0);
+               I := rad + RG_reye;
+               j := Round (theta_start_high + (2.0 * theta_in) + 0.5);
+               while Integer (Cos (Pi * Long_Float (j) /
+                                180.0) * Long_Float (Arc_Rad)) >= rad - RG_reye
+               loop
+                  j := j - 1;
+               end loop;
+               --  TODO: Arc (i, rad - Round (yf * Arc_Rad),
+               --       Integer (theta_start_high),
+               --       j, Arc_Rad);
+               j := Integer (theta_start_low);
+               while Integer (Cos (Pi * Long_Float (j) / 180.0) *
+                                Long_Float (Arc_Rad)) >= rad - RG_reye
+               loop
+                  j := j + 1;
+               end loop;
+               --  TODO: Arc (i, rad + Round (yf * Arc_Rad), j,
+               --       Round (theta_start_low + (2 * theta_in) + 0.5),
+               --       Arc_Rad);
+            end if;
+            --  if b<
+            --  mag of delta_x for RG circles
+         else
+            b := 1.0 * abs (Long_Float (RG_delta_x));
+            beta := 90.0;
+            if (a < b + Long_Float (clip_rad))
+              and then (b < a + Long_Float (clip_rad))
+            then
+               --  for k:=1 to Trunc(2*theta_in) div Angle_2 do begin
+               --  ths:= Round(theta_start_high) + (k-1)*Angle_2;
+               --  Arc(centerx+RG_delta_x,centery,ths,ths+1,Arc_rad);
+               --  {plotting one degree makes a single arc point}
+               --  {plot continuously for the circle}
+               --  end; {for k}
+               Get_thetas (a, b, Long_Float (clip_rad), RG_delta_x);
+               --  TODO: Arc (rad + RG_delta_x, rad,
+               --        Integer (theta_start_high),
+               --        Round (theta_start_high + (2 * theta_in) + 0.5),
+               --        Arc_rad);
+            end if;
+            --  if a< and b<
+         end if;
+      end Make_Dot_Arcs;
+      --  *********************************************************
+      --  *Draw_EGA_Smith*
+   begin
+      SetViewPort (centerx - rad, centery - rad, centerx + rad, centery + rad,
+                   True);
+      SetFillStyle (SolidFill, black);
+      SetCol (Green);
+      reye := Round (rad / rho_fac);
+      if imped_chart
+      then
+         RG_reye := reye;
+      else
+         RG_reye := - reye;
+      end if;
+      if rho_fac > 0.29
+      then
+         --  ignore lines for tiny smith chart
+         --  If very large raw just outer circle
+         if (rho_fac <= 15)
+         then
+            --  if Large_Smith then
+            --  {* Set arc length to 10 degrees (0.2618 radians)x .25 reye *}
+            --  Arc_length:= 0.036*reye*rho_fac
+            --  else
+            --  {* Set arc length to 15 degrees (0.2618 radians)x .25 reye *}
+            --  Arc_length:= 0.055*reye*rho_fac;
+            --  r circles, except smallest one
+            for I in 2 .. 5
+            loop
+               Make_Dot_Arcs ((I * reye) / 6, ((6 - I) * RG_reye) / 6, rad);
+            end loop;
+            --  If large chart then draw r circles outside eye
+            if rho_fac > 1.5
+            then
+               Make_Dot_Arcs (reye, 2 * RG_reye, rad);
+               Make_Dot_Arcs (3 * reye, - 2 * RG_reye, rad);
+               Make_Dot_Arcs (3 * reye, 4 * RG_reye, rad);
+            end if;
+            --  Make_Dot_Arcs(reye div 2,0,rad);  {center 0 calls xb circles}
+            --  {	     Make_Dot_Arcs(reye,0,rad); }
+            --  Make_Dot_Arcs(2*reye,0,rad);
+            --  end
+            --  else begin
+            --  {             IF (rho_fac > 1.0) THEN BEGIN
+            --  FOR I:= 1 TO 3 DO BEGIN
+            --  Make_Dot_Arcs ((I * reye) DIV 3, 0, reye);
+            --  END;
+            --  FOR I:= 1 TO 2 DO BEGIN
+            --  Make_Dot_Arcs ((3 * reye) DIV I, 0, reye);
+            --  END;
+            --  END ELSE BEGIN
+            --  draw xb circles
+            --  Draw smallest r circle and clear area inside (if visible)
+            --  This makes the xb circles stop at the inner r circle
+            Make_Dot_arcs (reye * 5, 0, rad);
+            Make_Dot_arcs (reye * 2, 0, rad);
+            Make_Dot_arcs (reye / 2, 0, rad);
+            if (rho_fac > 0.66)
+            then
+               FillEllipse ((5 * RG_reye) / 6 + rad, rad, reye / 6, reye / 6);
+            end if;
+            --  if necessary also left side
+            if (rho_fac > 1.0)
+            then
+               FillEllipse ((7 * RG_reye) / 6 + rad, rad, reye / 6, reye / 6);
+            end if;
+            --  Now draw xb circles that cut smallest r circle
+            Make_Dot_Arcs (reye / 5, 0, rad);
+            Make_Dot_Arcs (reye, 0, rad);
+         end if;
+         --  if not(rho_fac>15)
+         --  rho > 0.3
+      else
+         if rho_fac > 0.18
+         then
+            --  if .18<rho_fac<.3 then tick and cir
+            --  Arc_length:= 0.05*reye*2*rho_fac;
+            --  rho > 0.18
+            --  if rho_fac < .18 then just draw a tick mark
+            Make_Dot_Arcs (reye / 2, RG_reye / 2, rad);
+            Line (rad, rad - 3, rad, rad + 3);
+         else
+            Line (rad, rad - 3, rad, rad + 3);
+         end if;
+      end if;
+      --  real axis
+      --  outer circles
+      Line (0, rad, 2 * rad, rad);
+      SetCol (lightgreen);
+      if rho_fac > 1.0
+      then
+         Circle (rad, rad, reye);
+      end if;
+      if (blackwhite)
+      then
+         SetColor (lightgreen);
+      end if;
+      --  draw outer circle
+      --  overpaint overetched arc parts
+      Circle (rad, rad, rad);
+      reye := 2 * rad;
+      FloodFill (0, 0, lightgreen);
+      FloodFill (0, reye, lightgreen);
+      FloodFill (reye, 0, lightgreen);
+      FloodFill (reye, reye, lightgreen);
+      if (blackwhite)
+      then
+         SetColor (white);
+         Circle (rad, rad, rad);
+      end if;
+      --  { mark at (1 0) }
+      --  SetCol(green);
+      --  IF (blackwhite) THEN SetFillStyle(solidFill, white) ELSE SetFillStyle(solidFill, green);
+      --  FillEllipse(rad, rad, 2, 2);
+      --  {  Circle(rad, rad, 2); }
+      SetViewPort (xmin (12), ymin (12), xmax (12), ymax (12), False);
+   end Draw_EGA_Smith;
 
 end pfmsc;

@@ -6,7 +6,6 @@ with Interfaces;              use Interfaces;
 with Interfaces.C;            use Interfaces.C;
 
 with xgraph;                  use xgraph;
-with pfrw;                    use pfrw;
 with pfun1;                   use pfun1;
 with pfun2;                   use pfun2;
 with Utils;                   use Utils;
@@ -354,8 +353,8 @@ package body pfst is
          TextCol (White);
          message_color := White;
          Blank_Blue_Cursor;
+         --   ResizeWindow (Integer_32 (80 * 8), Integer_32 (32 * 15));
          loop
-            ResizeWindow (Integer_32 (80 * 8), Integer_32 (32 * 15));
             Ch := char'Val (ReadKey);
             exit when Ch /= screenresize;
          end loop;
@@ -390,29 +389,12 @@ package body pfst is
       --  * Init_Puff_Parameters; *
       Prep_to_Read_Board;
       read_kbd := True;
-      if not File_Exists_And_Open (net_file, To_Unbounded_String ("setup.puf"))
+      if not fileexists (puff_file /= "setup.puf", net_file, puff_file)
       then
          Erase_Message;
          message (2) := To_Unbounded_String ("setup.puf");
          message (3) := To_Unbounded_String ("not found");
          shutdown;
-      end if;
-      Read_Net (net_file, False);
-      Close (net_file);
-      if Tail (puff_file, 4) /= ".puf"
-      then
-         puff_file := puff_file & ".puf";
-      end if;
-      if puff_file /= "" and then not File_Exists_And_Open (net_file,
-                                                            puff_file)
-      then
-         Erase_Message;
-         message (2) := puff_file;
-         message (3) := To_Unbounded_String ("not found");
-         shutdown;
-      else
-         Read_Net (net_file, True);
-         Close (net_file);
       end if;
    end Puff_Start;
 

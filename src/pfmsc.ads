@@ -6,4 +6,6 @@ package pfmsc is
 
    procedure Indef_Matrix (S : in out s_conv_matrix; n : Integer);
 
+   procedure Draw_EGA_Smith (imped_chart : Boolean);
+
 end pfmsc;

@@ -240,7 +240,9 @@ package body pfun2 is
                   bad_compt := True;
                   message (1) := To_Unbounded_String ("Impedance too big");
                   message (2) := To_Unbounded_String ("tline too narrow");
-                  message (3) := To_Unbounded_String ("(<" & sresln & ")");
+                  message (3) := To_Unbounded_String ("(<" &
+                                                        To_String (sresln)
+                                                      & ")");
                   return;
                end if;
                if width > bmax
@@ -389,7 +391,7 @@ package body pfun2 is
                bad_compt := True;
                message (1) := To_Unbounded_String ("tline too short");
                message (2) := To_Unbounded_String ("Length must be");
-               message (3) := To_Unbounded_String (">" & sresln);
+               message (3) := To_Unbounded_String (">" & To_String (sresln));
                return;
             end if;
             P2Ada_Var_15.con_space := 0.0;
@@ -576,7 +578,8 @@ package body pfun2 is
                   bad_compt := True;
                   message (1) := To_Unbounded_String ("Impedance too big");
                   message (2) := To_Unbounded_String ("qline too narrow");
-                  message (3) := To_Unbounded_String ("(<" & sresln & ')');
+                  message (3) :=
+                    To_Unbounded_String ("(<" & To_String (sresln) & ')');
                   return;
                end if;
                if P2Ada_Var_16.width > bmax
@@ -1088,7 +1091,8 @@ package body pfun2 is
                   then
                      bad_compt := True;
                      message (1) := To_Unbounded_String ("clines spacing is");
-                     message (2) := To_Unbounded_String ('<' & sresln);
+                     message (2) :=
+                       To_Unbounded_String ('<' & To_String (sresln));
                      message (3) :=
                        To_Unbounded_String (Character (Omega) & "e/"
                                             & Character (Omega)
@@ -1100,7 +1104,8 @@ package body pfun2 is
                      bad_compt := True;
                      message (1) := To_Unbounded_String ("Even impedance is");
                      message (2) := To_Unbounded_String ("too large. Width");
-                     message (3) := To_Unbounded_String ('<' & sresln);
+                     message (3) :=
+                       To_Unbounded_String ('<' & To_String (sresln));
                      return;
                   end if;
                   if stripline
@@ -1434,7 +1439,8 @@ package body pfun2 is
                bad_compt := True;
                message (1) := To_Unbounded_String ("lumped length");
                message (2) := To_Unbounded_String ("must be in m");
-               message (3) := To_Unbounded_String ('>' & sresln);
+               message (3) :=
+                 To_Unbounded_String ('>' & To_String (sresln));
             end if;
          end;
       else

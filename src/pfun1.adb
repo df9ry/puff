@@ -496,6 +496,34 @@ package body pfun1 is
          return False;
    end File_Exists_And_Open;
 
+   function setupexists (fname : out Unbounded_String) return Boolean is
+      Result_setupexists : Boolean;
+      found : Boolean;
+   begin
+      found := False;
+      message (2) := fname;
+      if fname /= "setup.puf"
+      then
+         fname := To_Unbounded_String ("setup.puf");
+         found := fileexists (False, net_file, fname);
+      end if;
+      if not (found)
+      then
+         fname := To_Unbounded_String ("../PUFF/setup.puf");
+         found := fileexists (False, net_file, fname);
+      end if;
+      if found
+      then
+         Erase_Message;
+         message (1) := To_Unbounded_String ("Missing board#");
+         message (2) := To_Unbounded_String ("Try");
+         message (3) := fname;
+         Write_Error (2.0);
+      end if;
+      Result_setupexists := found;
+      return Result_setupexists;
+   end setupexists;
+
    --  Called when a disastrous error condition
    --  has been reached to stop Puff.
    --  *
@@ -2132,5 +2160,181 @@ package body pfun1 is
       vu.r := vu.r - vX.r * vY.r + vX.i * vY.i;
       vu.i := vu.i - vX.r * vY.i - vX.i * vY.r;
    end diffpr;
+
+   procedure move_cursor (x1, y1 : Integer) is
+      has_spaces : Boolean;
+      long : Integer;
+   begin
+      has_spaces := False;
+      if x1 /= 0
+      then
+         --  [P2Ada]: WITH instruction
+         declare P2Ada_Var_3 : compt_record renames ccompt.all;
+         begin
+            long := Length (P2Ada_Var_3.descript);
+            if cx + x1 <= long
+            then
+               cx := cx + x1;
+               if cx < P2Ada_Var_3.x_block
+               then
+                  cx := P2Ada_Var_3.x_block;
+               end if;
+               if P2Ada_Var_3.right and then
+                 (cx + P2Ada_Var_3.xp >= P2Ada_Var_3.xorig)
+               then
+                  if window_number = 2
+                  then
+                     WindMax := WindMax + 1;
+                  end if;
+                  --  Increment WindMax to prevent scrolling in plot window
+                  P2Ada_Var_3.xp := P2Ada_Var_3.xp - 1;
+                  write_compt (LightGray, ccompt);
+                  Put (' ');
+                  if window_number = 2
+                  then
+                     WindMax := WindMax - 1;
+                  end if;
+                  --  Restore WindMax
+               end if;
+            end if;
+         end;
+      else
+         Erase_Message;
+         if Index (ccompt.all.descript, " ") /= 0
+         then
+            has_spaces := True;
+         end if;
+         if (window_number = 2) and then (((Length (ccompt.all.descript)) < 3)
+                                          or else (has_spaces))
+         then
+            for i in 1 .. max_params
+            loop
+               --  Delete invalid S-parameter designations
+               if s_param_table (i) = ccompt
+               then
+                  --  erase invalid s-parameter on screen
+                  Delete (ccompt.all.descript, 2, 2);
+                  GotoXY (Integer_32 (ccompt.all.xp - 2),
+                          Integer_32 (ccompt.all.yp));
+                  Put ("     ");
+               end if;
+            end loop;
+         end if;
+         if y1 /= 0
+         then
+            --  if y1=0 then skip the following
+            if y1 = -1
+            then
+               if ccompt.all.prev_compt = null
+               then
+                  beep;
+               else
+                  ccompt := ccompt.all.prev_compt;
+               end if;
+               --  y1=1
+            else
+               if (ccompt.all.next_compt = null) or else
+                 (not (Large_Parts)
+                  and then (window_number = 3)
+                  and then (Character'Pos (Element (ccompt.all.descript, 1)) -
+                                Character'Pos ('a') >= ymax (3) -
+                                  ymin (3))) or else
+                 (Large_Parts and then (window_number = 3)
+                  and then
+                    (Character'Pos (Element (ccompt.all.descript, 1)) -
+                         Character'Pos ('a') >= ymax (3) - ymin (3)) and then
+                  help_displayed)
+               then
+                  beep;
+               else
+                  ccompt := ccompt.all.next_compt;
+               end if;
+            end if;
+            --  y1=-1
+            if (window_number = 2) and then (Length (ccompt.all.descript) = 1)
+            then
+               for i in 1 .. max_params
+               loop
+                  if s_param_table (i) = ccompt
+                  then
+                     --  write "S"
+                     pattern (xmin (2) * charx - 1, (ymin (2) + 2 + i) *
+                                chary - 8, i, 0);
+                     write_comptm (1, LightGray, ccompt);
+                  end if;
+               end loop;
+            end if;
+            long := Length (ccompt.all.descript);
+            if cx > long
+            then
+               cx := long;
+            end if;
+            if window_number = 2
+            then
+               cx := ccompt.all.x_block;
+            end if;
+            if cx < ccompt.all.x_block
+            then
+               cx := ccompt.all.x_block;
+            end if;
+         end if;
+         --  if y1 <> 0
+      end if;
+      --  else
+   end move_cursor;
+
+   procedure pattern (x1, y1, ij, pij : Integer) is
+      pragma Unreferenced (pij);
+   begin
+      SetCol (Unsigned_16 (s_color (ij)));
+      case ij is
+         when 1 =>
+            --  draw the box
+            Rectangle (Integer_32 (x1 - 3),
+                       Integer_32 (y1 - 3),
+                       Integer_32 (x1 + 3),
+                       Integer_32 (y1 + 3));
+         when 2 =>
+            --  draw X
+            Line (Integer_32 (x1 - 3),
+                  Integer_32 (y1 - 3),
+                  Integer_32 (x1 + 3),
+                  Integer_32 (y1 + 3));
+            Line (Integer_32 (x1 - 3),
+                  Integer_32 (y1 + 3),
+                  Integer_32 (x1 + 3),
+                  Integer_32 (y1 - 3));
+         when 3 =>
+            --  draw diamond
+            Line (Integer_32 (x1 - 4),
+                  Integer_32 (y1),
+                  Integer_32 (x1),
+                  Integer_32 (y1 + 4));
+            Line (Integer_32 (x1 - 3),
+                  Integer_32 (y1 - 1),
+                  Integer_32 (x1),
+                  Integer_32 (y1 - 4));
+            Line (Integer_32 (x1 + 4),
+                  Integer_32 (y1),
+                  Integer_32 (x1 + 1),
+                  Integer_32 (y1 + 3));
+            Line (Integer_32 (x1 + 3),
+                  Integer_32 (y1 - 1),
+                  Integer_32 (x1 + 1),
+                  Integer_32 (y1 - 3));
+         when 4 =>
+            --  draw +
+            Line (Integer_32 (x1 - 4),
+                  Integer_32 (y1),
+                  Integer_32 (x1 + 4),
+                  Integer_32 (y1));
+            Line (Integer_32 (x1),
+                  Integer_32 (y1 + 4),
+                  Integer_32 (x1),
+                  Integer_32 (y1 - 4));
+         when others =>
+            null;
+      end case;
+   end pattern;
 
 end pfun1;

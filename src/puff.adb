@@ -10,7 +10,7 @@ procedure puff is
 begin
    Init_X;
    Puff_Start;
-   Post_Read_Net (puff_file);
+   Read_Net (puff_file, True);
 
 exception
    when Program_halted =>

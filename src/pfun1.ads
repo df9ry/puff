@@ -230,7 +230,7 @@ package pfun1 is
    co1 : TComplex;
    c_s : s_param;
    conk, ccon : conn;
-   sresln : String (1 .. 9);
+   sresln : Unbounded_String;
    big_text_buf : array (1 .. 2048) of char;
    sdevice : s_conv_matrix;
    x_sweep : Sweep;
@@ -365,6 +365,7 @@ package pfun1 is
 
    function File_Exists_And_Open (file : in out Ada.Text_IO.File_Type;
                          fname : Unbounded_String) return Boolean;
+   function setupexists (fname : out Unbounded_String) return Boolean;
 
    procedure prp (vu : in out TComplex; vX, vY : TComplex);
    procedure co (co : in out TComplex; s, t : Long_Float);
@@ -465,5 +466,9 @@ package pfun1 is
    procedure supr (vu : in out TComplex; vX, vY : TComplex);
 
    procedure diffpr (vu : in out TComplex; vX, vY : TComplex);
+
+   procedure move_cursor (x1, y1 : Integer);
+
+   procedure pattern (x1, y1, ij, pij : Integer);
 
 end pfun1;
